@@ -29,3 +29,7 @@ class RandomWaypointModel:
             self.pause_time = random.uniform(self.min_pause, self.max_pause)
             self.target_x = random.uniform(0, self.area_width)
             self.target_y = random.uniform(0, self.area_height)
+
+    def get_position(self):
+        return self.current_x, self.current_y
+
