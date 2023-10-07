@@ -33,3 +33,25 @@ class RandomWaypointModel:
     def get_position(self):
         return self.current_x, self.current_y
 
+'''
+example code to test class
+'''
+
+def test():
+    area_width = 100  # width of the simulation area
+    area_height = 100  # height of the simulation area
+    max_speed = 5  # maximum speed of the user/device
+    min_pause = 10  # minimum pause time at each stop
+    max_pause = 50  # maximum pause time at each stop
+
+    model = RandomWaypointModel(area_width, area_height, max_speed, min_pause, max_pause)
+
+    # Simulating the movement by certain time steps
+    for _ in range(100):
+        model.update(1)  # Updating time step by 1s
+        x, y = model.get_position()
+        print(f"Current Position: ({x}, {y})")
+
+if __name__  == "__main__":
+    test()
+
