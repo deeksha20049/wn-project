@@ -1,12 +1,13 @@
 import numpy as np
 
 class WiFiAccessPoint:
-    def __init__(self, ap_id, ap_position, transmit_power, noise_psd, bandwidth):
+    def __init__(self, ap_id, ap_position, transmit_power, noise_psd, bandwidth,sigma):
         self.ap_id = ap_id
         self.ap_position = ap_position
         self.transmit_power = transmit_power
         self.noise_psd = noise_psd
         self.bandwidth = bandwidth
+        self.sigma = sigma
         
     #standard Rayleigh distribution
     def calculate_channel_gain_rayleigh(self):
@@ -54,8 +55,7 @@ class WiFiAccessPoint:
 # wifi_bandwidth = 20e6  # WiFi system bandwidth (in Hz)
 
 # # Simulation parameters for users and AP
-# user_positions = [(np.random.uniform(-5, 5), np.random.uniform(-5, 5)) for _ in range(5)]  # User positions (x, y) in the room
 # ap_position = (0, 0)  # AP position (x, y) in the room
 
 # # Update WiFi access point creation with the updated parameters
-# wifi_ap = WiFiAccessPoint(ap_id=1, ap_position=ap_position, transmit_power=wifi_transmit_power, noise_psd=wifi_noise_psd, bandwidth=wifi_bandwidth)
+# wifi_ap = WiFiAccessPoint(ap_id=1, ap_position=ap_position, transmit_power=wifi_transmit_power, noise_psd=wifi_noise_psd, bandwidth=wifi_bandwidth, sigma=shadow_fading_std_dev)
