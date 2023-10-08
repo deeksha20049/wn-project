@@ -41,21 +41,22 @@ class WiFiAccessPoint:
     def calculate_snr(self, channel_gain):
         return (channel_gain * self.transmit_power) / (self.noise_psd * self.bandwidth)
 
-# # Simulation parameters
-# fc = 2.4e9  # Central carrier frequency (2.4 GHz in Hz)
-# # WiFi channel gain parameters
-# shadow_fading_std_dev = 10  # Standard deviation of shadow fading (in dB)
-# # Free-space path loss parameters
-# reference_distance = 10.0  # dref (in meters)
-# path_loss_exponent = 2.75  # Path loss exponent
+if __name__ == "__main__":
+    # Simulation parameters
+    fc = 2.4e9  # Central carrier frequency (2.4 GHz in Hz)
+    # WiFi channel gain parameters
+    shadow_fading_std_dev = 10  # Standard deviation of shadow fading (in dB)
+    # Free-space path loss parameters
+    reference_distance = 10.0  # dref (in meters)
+    path_loss_exponent = 2.75  # Path loss exponent
 
-# # WiFi SNR parameters
-# wifi_transmit_power = 1e-3 * 10**(20/10)  # Transmit power of the WiFi AP (in Watts)
-# wifi_noise_psd = 10**(-174/10)  # PSD of noise at the receiver (in A^2/Hz)
-# wifi_bandwidth = 20e6  # WiFi system bandwidth (in Hz)
+    # WiFi SNR parameters
+    wifi_transmit_power = 1e-3 * 10**(20/10)  # Transmit power of the WiFi AP (in Watts)
+    wifi_noise_psd = 10**(-174/10)  # PSD of noise at the receiver (in A^2/Hz)
+    wifi_bandwidth = 20e6  # WiFi system bandwidth (in Hz)
 
-# # Simulation parameters for users and AP
-# ap_position = (0, 0)  # AP position (x, y) in the room
+    # Simulation parameters for users and AP
+    ap_position = (0, 0)  # AP position (x, y) in the room
 
-# # Update WiFi access point creation with the updated parameters
-# wifi_ap = WiFiAccessPoint(ap_id=1, ap_position=ap_position, transmit_power=wifi_transmit_power, noise_psd=wifi_noise_psd, bandwidth=wifi_bandwidth, sigma=shadow_fading_std_dev)
+    # Update WiFi access point creation with the updated parameters
+    wifi_ap = WiFiAccessPoint(ap_id=1, ap_position=ap_position, transmit_power=wifi_transmit_power, noise_psd=wifi_noise_psd, bandwidth=wifi_bandwidth, sigma=shadow_fading_std_dev)
