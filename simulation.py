@@ -47,12 +47,28 @@ for x in x_grid:
             'H_L4': H_L4
         }
 
-# Print or store the H values for each square as needed
-for (x, y), values in h_values.items():
-    print(f"Square ({x:.2f}, {y:.2f}):")
-    print(f"H(W): {values['H_W']:.4f}")
-    print(f"H(L1): {values['H_L1']:.4f}")
-    print(f"H(L2): {values['H_L2']:.4f}")
-    print(f"H(L3): {values['H_L3']:.4f}")
-    print(f"H(L4): {values['H_L4']:.4f}")
+# Create a user mobility model
+user_model = RandomWaypointModel(room_width, room_height, max_speed=1.0, min_pause=1, max_pause=1)
+
+# Initialize user position at (2.5, 2.5) and height 0.8
+user_x, user_y = 2.5, 2.5
+user_height = 0.8
+
+# Simulate user's movement and print the updated H values
+for _ in range(10):  # Simulate for 10 seconds (10 steps)
+    user_x, user_y = user_model.update_positions(1)  # Move the user every 1 second
+    print(f"User at ({user_x:.2f}, {user_y:.2f}), Height: {user_height:.2f}")
+
+    # Get the H values at the user's current position from the precomputed dictionary
+    h_values_at_user_position = h_values.get((user_x, user_y))
+
+    if h_values_at_user_position:
+        print(f"H(W): {h_values_at_user_position['H_W']:.4f}")
+        print(f"H(L1): {h_values_at_user_position['H_L1']:.4f}")
+        print(f"H(L2): {h_values_at_user_position['H_L2']:.4f}")
+        print(f"H(L3): {h_values_at_user_position['H_L3']:.4f}")
+        print(f"H(L4): {h_values_at_user_position['H_L4']:.4f}")
+    else:
+        print("User is outside the grid.")
+
     print()
