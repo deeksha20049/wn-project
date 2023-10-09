@@ -19,11 +19,9 @@ class WiFiAccessPoint:
         channel_gain_rayleigh = np.abs(x + 1j * y)
 
         return channel_gain_rayleigh
-   def calculate_distance(self, user):
-        return np.linalg.norm(np.array(self.ap_position) - np.array(user.position))
     
     def calculate_channel_gain(self, user, fc):
-        distance = self.calculate_distance(user)
+        distance = user.calculate_distance(self.ap_position)
         dref = 10.0  # Reference distance (in meters)
 
         # Free-space path loss calculation
