@@ -3,6 +3,7 @@ from mobility import RandomWaypointModel
 from lifi import LifiAccessPoint
 from wifi import WiFiAccessPoint
 from user import User
+import math
 
 # Function to calculate H(W), H(L1), H(L2), H(L3), and H(L4) for a given point
 def calculate_channel_gains(x, y):
@@ -14,6 +15,77 @@ def calculate_channel_gains(x, y):
     H_L3 = lifi_aps[2].get_channel_gain(x, y)
     H_L4 = lifi_aps[3].get_channel_gain(x, y)
     return H_W, H_L1, H_L2, H_L3, H_L4
+
+def bilinear_interpolation(x, y, h_values):
+    # Check if the user's position is within the grid
+    if (x, y) in h_values:
+        return h_values[(x, y)]
+    else:
+        # Find the four nearest grid points
+        x1, x2 = math.floor(x), math.ceil(x)
+        y1, y2 = math.floor(y), math.ceil(y)
+
+        # Get the channel gains at the four nearest grid points
+        values_at_x1y1 = h_values.get((x1, y1), {'H_W': 0, 'H_L1': 0, 'H_L2': 0, 'H_L3': 0, 'H_L4': 0})
+        values_at_x1y2 = h_values.get((x1, y2), {'H_W': 0, 'H_L1': 0, 'H_L2': 0, 'H_L3': 0, 'H_L4': 0})
+        values_at_x2y1 = h_values.get((x2, y1), {'H_W': 0, 'H_L1': 0, 'H_L2': 0, 'H_L3': 0, 'H_L4': 0})
+        values_at_x2y2 = h_values.get((x2, y2), {'H_W': 0, 'H_L1': 0, 'H_L2': 0, 'H_L3': 0, 'H_L4': 0})
+
+        # Extract individual components for interpolation
+        H_W1, H_L1_1, H_L2_1, H_L3_1, H_L4_1 = values_at_x1y1.values()
+        H_W2, H_L1_2, H_L2_2, H_L3_2, H_L4_2 = values_at_x1y2.values()
+        H_W3, H_L1_3, H_L2_3, H_L3_3, H_L4_3 = values_at_x2y1.values()
+        H_W4, H_L1_4, H_L2_4, H_L3_4, H_L4_4 = values_at_x2y2.values()
+
+        # Bilinear interpolation for H_W
+        H_W = (1 / ((x2 - x1) * (y2 - y1))) * (
+            H_W1 * (x2 - x) * (y2 - y) +
+            H_W2 * (x2 - x) * (y - y1) +
+            H_W3 * (x - x1) * (y2 - y) +
+            H_W4 * (x - x1) * (y - y1)
+        )
+
+        # Bilinear interpolation for H_L1
+        H_L1 = (1 / ((x2 - x1) * (y2 - y1))) * (
+            H_L1_1 * (x2 - x) * (y2 - y) +
+            H_L1_2 * (x2 - x) * (y - y1) +
+            H_L1_3 * (x - x1) * (y2 - y) +
+            H_L1_4 * (x - x1) * (y - y1)
+        )
+
+        # Implement bilinear interpolation for other H values similarly
+        # Bilinear interpolation for H_L2
+        H_L2 = (1 / ((x2 - x1) * (y2 - y1))) * (
+            H_L2_1 * (x2 - x) * (y2 - y) +
+            H_L2_2 * (x2 - x) * (y - y1) +
+            H_L2_3 * (x - x1) * (y2 - y) +
+            H_L2_4 * (x - x1) * (y - y1)
+        )
+        
+        # Bilinear interpolation for H_L3
+        H_L3 = (1 / ((x2 - x1) * (y2 - y1))) * (
+            H_L3_1 * (x2 - x) * (y2 - y) +
+            H_L3_2 * (x2 - x) * (y - y1) +
+            H_L3_3 * (x - x1) * (y2 - y) +
+            H_L3_4 * (x - x1) * (y - y1)
+        )
+        
+        # Bilinear interpolation for H_L4
+        H_L4 = (1 / ((x2 - x1) * (y2 - y1))) * (
+            H_L4_1 * (x2 - x) * (y2 - y) +
+            H_L4_2 * (x2 - x) * (y - y1) +
+            H_L4_3 * (x - x1) * (y2 - y) +
+            H_L4_4 * (x - x1) * (y - y1)
+        )
+
+        return {
+            'H_W': H_W,
+            'H_L1': H_L1,
+            'H_L2': H_L2,
+            'H_L3': H_L3,
+            'H_L4': H_L4
+        }
+
 
 # Room dimensions
 room_width = 5.0
@@ -74,27 +146,29 @@ for _ in range(10):  # Simulate for 10 seconds (10 steps)
     print(f"User at ({user_x:.2f}, {user_y:.2f}), Height: {user_height:.2f}")
 
     # Get the H values at the user's current position from the precomputed dictionary
-    h_values_at_user_position = h_values.get((round(user_x), round(user_y)))
+    # h_values_at_user_position = h_values.get((round(user_x), round(user_y)))
+    # h_values_at_user_position = h_values.get((math.floor(user_x), math.ceil(user_y)))
+    # h_values_at_user_position = h_values.get((user_x, user_y))
+    
+    # Get the estimated H values at the user's current position using bilinear interpolation
+    estimated_gains = bilinear_interpolation(user_x, user_y, h_values)
+    
+    print(f"H(W): {estimated_gains['H_W']}")
+    print(f"H(L1): {estimated_gains['H_L1']}")
+    print(f"H(L2): {estimated_gains['H_L2']}")
+    print(f"H(L3): {estimated_gains['H_L3']}")
+    print(f"H(L4): {estimated_gains['H_L4']}")
 
-    if h_values_at_user_position:
-        print(f"H(W): {h_values_at_user_position['H_W']}")
-        print(f"H(L1): {h_values_at_user_position['H_L1']}")
-        print(f"H(L2): {h_values_at_user_position['H_L2']}")
-        print(f"H(L3): {h_values_at_user_position['H_L3']}")
-        print(f"H(L4): {h_values_at_user_position['H_L4']}")
-        
-        # Determine which router has the highest channel gain
-        best_router = max(h_values_at_user_position, key=lambda key: h_values_at_user_position[key])
-        print(f"Best Router: {best_router}")
+    # Determine which router has the highest channel gain
+    best_router = max(estimated_gains, key=lambda key: estimated_gains[key])
+    print(f"Best Router: {best_router}")
 
-        # Connect the user to the best router based on the decision
-        if best_router == 'H_W':
-            print("Connecting to WiFi (W)")
-        else:
-            # Extract the router number from the key (e.g., 'H_L1' -> 'L1')
-            router_number = best_router.split('_')[1]
-            print(f"Connecting to LiFi ({router_number})")
+    # Connect the user to the best router based on the decision
+    if best_router == 'H_W':
+        print("Connecting to WiFi (W)")
     else:
-        print("User is outside the grid.")
+        # Extract the router number from the key (e.g., 'H_L1' -> 'L1')
+        router_number = best_router.split('_')[1]
+        print(f"Connecting to LiFi ({router_number})")
 
     print()
