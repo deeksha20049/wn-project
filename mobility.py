@@ -10,8 +10,9 @@ class RandomWaypointModel:
         self.max_pause = max_pause
         self.current_x = random.uniform(0, area_width)
         self.current_y = random.uniform(0, area_height)
-        self.target_x = random.uniform(0, area_width)
-        self.target_y = random.uniform(0, area_height)
+        self.target_x = random.choice([i for i in range(0, int(area_width)) if int(i) != int(self.current_x)])
+        self.target_y = random.choice([i for i in range(0, int(area_height)) if int(i) != int(self.current_y)])
+
         self.speed = 0
         self.pause_time = 0
 
@@ -27,8 +28,8 @@ class RandomWaypointModel:
                 self.current_y += (self.target_y - self.current_y) * ratio
 
             self.pause_time = random.uniform(self.min_pause, self.max_pause)
-            self.target_x = random.uniform(0, self.area_width)
-            self.target_y = random.uniform(0, self.area_height)
+            self.target_x = random.choice([i for i in range(0, int(self.area_width)) if int(i) != int(self.current_x)])
+            self.target_y = random.choice([i for i in range(0, int(self.area_height)) if int(i) != int(self.current_y)])
 
     def get_position(self):
         return self.current_x, self.current_y
