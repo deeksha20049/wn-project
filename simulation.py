@@ -16,14 +16,21 @@ def calculate_channel_gains(x, y):
     H_L4 = lifi_aps[3].get_channel_gain(x, y)
     return H_W, H_L1, H_L2, H_L3, H_L4
 
+def my_ceil(a, precision=0):
+    return np.round(a + 0.5 * 10**(-precision), precision)
+
+def my_floor(a, precision=0):
+    return np.round(a - 0.5 * 10**(-precision), precision)
+
 def bilinear_interpolation(x, y, h_values):
     # Check if the user's position is within the grid
     if (x, y) in h_values:
         return h_values[(x, y)]
     else:
         # Find the four nearest grid points
-        x1, x2 = math.floor(x), math.ceil(x)
-        y1, y2 = math.floor(y), math.ceil(y)
+        x1, x2 = my_floor(x,1), my_ceil(x,1)
+        y1, y2 = my_floor(y,1), my_ceil(y,1)
+        print(f"({x1}, {y1}), ({x1}, {y2}), ({x2}, {y1}), ({x2}, {y2})")
 
         # Get the channel gains at the four nearest grid points
         values_at_x1y1 = h_values.get((x1, y1), {'H_W': 0, 'H_L1': 0, 'H_L2': 0, 'H_L3': 0, 'H_L4': 0})
@@ -131,7 +138,7 @@ for x in x_grid:
         }
 
 # Create a user mobility model
-user_model = RandomWaypointModel(room_width, room_height, max_speed=0.1, min_pause=1, max_pause=1)
+user_model = RandomWaypointModel(room_width, room_height, max_speed=0.5, min_pause=1, max_pause=1)
 
 # Initialize user position at (2.5, 2.5) and height 0.8
 user_x, user_y = 0, 0
