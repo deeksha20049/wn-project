@@ -1,8 +1,9 @@
 import numpy as np
+from typing import List
 
 class LifiAccessPoint:
     def __init__(self, x, y, Φ_1by2=60, Apd=1e-4, ref_index=1.5, FOV=90, gf=1,
-                P_total=20, room_x=5, room_y=5, room_z=5, h=0.8):
+                P_total=20, room_x=5, room_y=5, room_z=5, h=0.8, Rpd=0.53, Popt=3, k=3, Nlifi=10e-21, Blifi=20e6):
         # attribute for Half-intensity radiation angle (Φ1/2)
         self.Φ_1by2 = Φ_1by2 * np.pi / 180
         self.m = -np.log(2) / np.log(np.cos(np.radians(Φ_1by2)))
@@ -27,6 +28,16 @@ class LifiAccessPoint:
         self.h = h
         # position of the lifi access point in ceiling
         self.lifi_position = np.array([x, y, room_z])
+        # Detector responsivity, Rpd
+        self.Rpd = Rpd
+        # Transmitted optical power per LiFi AP, Popt
+        self.Popt = Popt
+        # optical to electrical conversion coefficient, k
+        self.k = k
+        # PSD of noise in LiFi AP, NLiFi
+        self.Nlifi = Nlifi
+        # Bandwidth of LiFi AP, BLiFi
+        self.Blifi = Blifi
         
         # Number of points in the x and y directions
         self.Nx = int(room_x * 10)
@@ -36,16 +47,22 @@ class LifiAccessPoint:
         self.XR, self.YR = np.meshgrid(self.x, self.y)
 
     def get_channel_gain(self, user_x, user_y):
-        d = self.distance(user_x, user_y)
+        # channel gain for LOS component
+        d = self.distance(user_x, user_y)        
         incidence = self.angle_incidence(user_x, user_y)
         gc = self.optical_gain(incidence)
         irradiance = incidence   # both angles are equal due to symmetry
         channel_gain = ((self.m + 1) * self.Apd * (np.cos(irradiance)**self.m) * np.cos(incidence) * \
                         self.gf * gc) / (2 * np.pi * d**2)
         return channel_gain
-        # P_rec = self.P_total * H * self.gf * self.G_Con
-        # P_rec_dBm = 10 * np.log10(P_rec)
-        # return P_rec_dBm
+    
+    def signal_to_noise_ratio(self, user_x, user_y, otherLifiAPs:List):
+        summation_term = 0
+        for lifi in otherLifiAPs:
+            summation_term += (self.Rpd * lifi.get_channel_gain(user_x, user_y) * self.Popt / self.k) ** 2
+        numerator = (self.Rpd * self.get_channel_gain(user_x, user_y) * self.Popt / self.k) ** 2
+        denominator = self.Nlifi * self.Blifi + summation_term
+        return numerator / denominator
     
     def distance(self, user_x, user_y):
         user_position = np.array([user_x, user_y, self.h])
