@@ -108,12 +108,9 @@ y_grid = [round(i * grid_size, 1) for i in range(int(room_height / grid_size) + 
 print(f"Number of squares in x-direction: {len(x_grid)}")
 print(f"Number of squares in y-direction: {len(y_grid)}")
 print(f"Total number of squares: {len(x_grid) * len(y_grid)}")
-print()
-print("Grid points:")
-print(list(zip(x_grid, y_grid)))
 
 # WiFi access point parameters
-wifi_ap = WiFiAccessPoint(ap_id='W', ap_position=(2.5, 2.5, 5), transmit_power=0.1, noise_psd=10**((-174-30)/10), bandwidth=20e6, sigma=10)
+wifi_ap = WiFiAccessPoint(ap_id='W', ap_position=(2.5, 2.5, 5), transmit_power=0.1, noise_psd=10**((-174 - 30)/10), bandwidth=20e6, sigma=10)
 
 # LiFi access points parameters
 lifi_aps = [
@@ -147,19 +144,8 @@ for i, x in enumerate(x_grid):
     for j, y in enumerate(y_grid):
         square_snr_values = snr_values.get((x, y), {'snr_W': 0, 'snr_L1': 0, 'snr_L2': 0, 'snr_L3': 0, 'snr_L4': 0})
         for k, key in enumerate(['snr_W', 'snr_L1', 'snr_L2', 'snr_L3', 'snr_L4']):
-            snr_values_matrix[i, j, k] = square_snr_values[key]
+            snr_values_matrix[i, j, k] = 10 * np.log10(square_snr_values[key])
 
-# Add a print statement here to see the content of snr_values_matrix
-# print("snr_values_matrix:")
-# print(snr_values_matrix)
-
-
-# Create a figure and a 3D axis for the surface plot
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-
-# Create X and Y mesh grids for plotting
-X, Y = np.meshgrid(x_grid, y_grid)
 
 # Create Z values for each channel
 Z_snr_W = snr_values_matrix[:, :, 0]  # snr_W
@@ -168,17 +154,25 @@ Z_snr_L2 = snr_values_matrix[:, :, 2]  # snr_L2
 Z_snr_L3 = snr_values_matrix[:, :, 3]  # snr_L3
 Z_snr_L4 = snr_values_matrix[:, :, 4]  # snr_L4
 
-# Create the surface plots for each channel
-ax.plot_surface(X, Y, Z_snr_W, cmap='viridis', label='snr_W', alpha=0.8)
-# ax.plot_surface(X, Y, Z_snr_L1, cmap='plasma', label='snr_L1', alpha=0.5)
-# ax.plot_surface(X, Y, Z_snr_L2, cmap='inferno', label='snr_L2', alpha=0.5)
-# ax.plot_surface(X, Y, Z_snr_L3, cmap='magma', label='snr_L3', alpha=0.5)
-# ax.plot_surface(X, Y, Z_snr_L4, cmap='cividis', label='snr_L4', alpha=0.5)
-
-# Set labels for the axes
+# Create a figure and a 3D axis for the surface plot
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+X, Y = np.meshgrid(x_grid, y_grid)
+# ax.plot_surface(X, Y, Z_snr_W, label='snr_W', alpha=1)
+ax.plot_surface(X, Y, Z_snr_L1, label='snr_L1', alpha=0.5)
+ax.plot_surface(X, Y, Z_snr_L2, label='snr_L2', alpha=0.5)
+ax.plot_surface(X, Y, Z_snr_L3, label='snr_L3', alpha=0.5)
+ax.plot_surface(X, Y, Z_snr_L4, label='snr_L4', alpha=0.5)
 ax.set_xlabel('X')
 ax.set_ylabel('Y')
 ax.set_zlabel('SNR')
+plt.savefig('snr_surface_plot_lifi.png')
+plt.show()
 
-# Show the plot
+# Create surface plot for snr_W
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+X, Y = np.meshgrid(x_grid, y_grid)
+ax.plot_surface(X, Y, Z_snr_W, label='snr_W', alpha=1)
+plt.savefig('snr_surface_plot_wifi.png')
 plt.show()
