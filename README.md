@@ -9,7 +9,7 @@ git clone git@github.com:deeksha20049/wn-project.git
 ```
 - Create the virtual environment
 ```bash
-python3 -m venv venv
+python3 -m venv env
 ```
 - Install the dependencies
 ```bash

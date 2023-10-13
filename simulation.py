@@ -4,6 +4,8 @@ from lifi import LifiAccessPoint
 from wifi import WiFiAccessPoint
 from user import User
 import math
+import matplotlib.pyplot as plt 
+from mpl_toolkits.mplot3d import Axes3D 
 
 # Function to calculate H(W), H(L1), H(L2), H(L3), and H(L4) for a given point
 def calculate_channel_gains(x, y):
@@ -115,6 +117,7 @@ lifi_aps = [
     LifiAccessPoint(x=3.75, y=1.25)
 ]
 
+
 # Create a dictionary to store H values for each square
 h_values = {}
 
@@ -130,8 +133,46 @@ for x in x_grid:
             'H_L4': H_L4
         }
 
+# Initialize h_values_matrix as a 3D NumPy array filled with zeros
+h_values_matrix = np.zeros((len(x_grid), len(y_grid), 5))
+
+# Populate h_values_matrix from h_values dictionary
+for i, x in enumerate(x_grid):
+    for j, y in enumerate(y_grid):
+        square_h_values = h_values.get((x, y), {'H_W': 0, 'H_L1': 0, 'H_L2': 0, 'H_L3': 0, 'H_L4': 0})
+        for k, key in enumerate(['H_W', 'H_L1', 'H_L2', 'H_L3', 'H_L4']):
+            h_values_matrix[i, j, k] = square_h_values[key]
+
+
+# Populate h_values_matrix from h_values dictionary
+for i, x in enumerate(x_grid):
+    for j, y in enumerate(y_grid):
+        square_h_values = h_values.get((x, y), {'H_W': 0, 'H_L1': 0, 'H_L2': 0, 'H_L3': 0, 'H_L4': 0})
+        for k, key in enumerate(['H_W', 'H_L1', 'H_L2', 'H_L3', 'H_L4']):
+            h_values_matrix[i, j, k] = square_h_values[key]
+
+# Add a print statement here to see the content of h_values_matrix
+print("h_values_matrix:")
+print(h_values_matrix)
+
+
+# # Create a dictionary to store H values for each square
+# h_values = {}
+
+# # Calculate H values for each square on the floor
+# for x in x_grid:
+#     for y in y_grid:
+#         H_W, H_L1, H_L2, H_L3, H_L4 = calculate_channel_gains(x, y)
+#         h_values[(x, y)] = {
+#             'H_W': H_W,
+#             'H_L1': H_L1,
+#             'H_L2': H_L2,
+#             'H_L3': H_L3,
+#             'H_L4': H_L4
+#         }
+
 # Create a user mobility model
-user_model = RandomWaypointModel(room_width, room_height, max_speed=0.1, min_pause=1, max_pause=1)
+user_model = RandomWaypointModel(room_width, room_height, max_speed=1.0, min_pause=1, max_pause=1)
 
 # Initialize user position at (2.5, 2.5) and height 0.8
 user_x, user_y = 0, 0
@@ -141,7 +182,7 @@ user_height = 0.8
 # breakpoint()
 # Simulate user's movement and print the updated H values
 for _ in range(10):  # Simulate for 10 seconds (10 steps)
-    user_model.updatePositions(1)  # Move the user every 1 second
+    user_model.updatePositions(0.1)  # Move the user every 1 second
     user_x, user_y = user_model.get_position()
     print(f"User at ({user_x:.2f}, {user_y:.2f}), Height: {user_height:.2f}")
 
@@ -172,3 +213,67 @@ for _ in range(10):  # Simulate for 10 seconds (10 steps)
         print(f"Connecting to LiFi ({router_number})")
 
     print()
+
+# ---
+
+# # Create a user mobility model
+# user_model = RandomWaypointModel(room_width, room_height, max_speed=1.0, min_pause=1, max_pause=1)
+
+# # Initialize user position at (2.5, 2.5) and height 0.8
+# user_x, user_y = 0, 0
+# user_height = 0.8
+
+# # Lists to store user positions for the surface plot
+# x_positions = []
+# y_positions = []
+# z_positions = []
+
+# # Simulate user's movement and print the updated H values
+# for _ in range(100):  # Simulate for 100 time steps
+#     user_model.updatePositions(0.1)  # Move the user every 0.1 seconds
+#     user_x, user_y = user_model.get_position()
+#     print(f"User at ({user_x:.2f}, {user_y:.2f}), Height: {user_height:.2f}")
+
+#     # Store user positions
+#     x_positions.append(user_x)
+#     y_positions.append(user_y)
+#     z_positions.append(user_height)
+
+# # Create a 3D surface plot using the captured positions
+# fig = plt.figure()
+# ax = fig.add_subplot(111, projection='3d')
+# ax.plot_trisurf(x_positions, y_positions, z_positions, cmap='viridis')
+# ax.set_xlabel('X')
+# ax.set_ylabel('Y')
+# ax.set_zlabel('Height')
+# plt.show()
+
+
+# Create a figure and a 3D axis for the surface plot
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+
+# Create X and Y mesh grids for plotting
+X, Y = np.meshgrid(x_grid, y_grid)
+
+# Create Z values for each channel
+Z_H_W = h_values_matrix[:, :, 0]  # H_W
+Z_H_L1 = h_values_matrix[:, :, 1]  # H_L1
+Z_H_L2 = h_values_matrix[:, :, 2]  # H_L2
+Z_H_L3 = h_values_matrix[:, :, 3]  # H_L3
+Z_H_L4 = h_values_matrix[:, :, 4]  # H_L4
+
+# Create the surface plots for each channel
+ax.plot_surface(X, Y, Z_H_W, cmap='viridis', label='H_W', alpha=0.8)
+ax.plot_surface(X, Y, Z_H_L1, cmap='plasma', label='H_L1', alpha=0.8)
+ax.plot_surface(X, Y, Z_H_L2, cmap='inferno', label='H_L2', alpha=0.8)
+ax.plot_surface(X, Y, Z_H_L3, cmap='magma', label='H_L3', alpha=0.8)
+ax.plot_surface(X, Y, Z_H_L4, cmap='cividis', label='H_L4', alpha=0.8)
+
+# Set labels for the axes
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Channel Gain')
+
+# Show the plot
+plt.show()
