@@ -10,15 +10,19 @@ class WiFiAccessPoint:
         self.sigma = sigma
         
     #standard Rayleigh distribution
-    def calculate_channel_gain_rayleigh(self):
-        # Generate independent Gaussian random variables
-        x = np.random.normal(0, self.sigma)
-        y = np.random.normal(0, self.sigma)
+    def calculate_channel_gain_rayleigh(self,k):
+        # Combine real and imaginary parts to get X1
+        X1 = 1/np.sqrt(2)*(np.random.normal(0, 1) +1j*(np.random.normal(0, 1)));
+        # real_part = np.sqrt(k / (k + 1)) * np.cos(np.radians(45))
+        imag_part = np.sqrt(k / (k + 1)) * np.exp(1j * np.radians(45))
 
-        # Calculate channel gain using Rayleigh fading model
-        channel_gain_rayleigh = np.abs(x + 1j * y)
+        # Combine real and imaginary parts to get H
+        # H = imag_part 
 
-        return channel_gain_rayleigh
+        # Add the multipath component (X1) weighted by 1 / sqrt(k + 1)
+        H = imag_part + np.sqrt(1 / (k + 1)) * X1
+
+        return H
     
     def calculate_distance(self, user_position):
         user_position = np.array(user_position)
@@ -30,15 +34,16 @@ class WiFiAccessPoint:
 
         # Free-space path loss calculation
         if distance < dref:
-            path_loss = 20 * np.log10(fc * dref) - 147.5
+            path_loss = 20 * np.log10(fc * distance) - 147.5
+            H =  self.calculate_channel_gain_rayleigh(1)
         else:
             path_loss = 20 * np.log10(fc * np.power(distance,2.75) / (np.power(dref,1.75))) - 147.5    
-        
+            H =  self.calculate_channel_gain_rayleigh(0)
         # Rayleigh fading channel (standard Rayleigh distribution)
-        H =  self.calculate_channel_gain_rayleigh()
+        # print(H)
 
         shadow_fading = np.random.normal(0, 10)  # Zero-mean Gaussian random variable with 10 dB std deviation
-        channel_gain = (H**2) * (10**((-path_loss * distance + shadow_fading) / 10))
+        channel_gain = (H**2) * (10**((-path_loss + shadow_fading) / 10))
 
         return channel_gain
 
