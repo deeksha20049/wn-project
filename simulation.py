@@ -10,7 +10,7 @@ from mpl_toolkits.mplot3d import Axes3D
 # Function to calculate H(W), H(L1), H(L2), H(L3), and H(L4) for a given point
 def calculate_channel_gains(x, y):
     fc = 2.4e9
-    user = User(user_id='U', position=(x, y))
+    user = User(user_id='U', position=(x, y, user_height))
     H_W = wifi_ap.calculate_channel_gain(user, fc)
     H_L1 = lifi_aps[0].get_channel_gain(x, y)
     H_L2 = lifi_aps[1].get_channel_gain(x, y)
@@ -114,7 +114,7 @@ print()
 print("Grid points:")
 print(list(zip(x_grid, y_grid)))
 # WiFi access point parameters
-wifi_ap = WiFiAccessPoint(ap_id='W', ap_position=(2.5, 2.5), transmit_power=1e-3, noise_psd=10**(-174/10), bandwidth=20e6, sigma=10)
+wifi_ap = WiFiAccessPoint(ap_id='W', ap_position=(2.5, 2.5, 5), transmit_power=1e-3, noise_psd=10**(-174/10), bandwidth=20e6, sigma=10)
 
 # LiFi access points parameters
 lifi_aps = [
