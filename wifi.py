@@ -13,7 +13,6 @@ class WiFiAccessPoint:
     def calculate_channel_gain_rayleigh(self,k):
         # Combine real and imaginary parts to get X1
         X1 = 1/np.sqrt(2)*(np.random.normal(0, 1) +1j*(np.random.normal(0, 1)));
-        # real_part = np.sqrt(k / (k + 1)) * np.cos(np.radians(45))
         imag_part = np.sqrt(k / (k + 1)) * np.exp(1j * np.radians(45))
 
         # Combine real and imaginary parts to get H
@@ -32,18 +31,21 @@ class WiFiAccessPoint:
         distance = self.calculate_distance(user.position)
         dref = 10.0  # Reference distance (in meters)
 
-        # Free-space path loss calculation
-        if distance < dref:
-            path_loss = 20 * np.log10(fc * distance) - 147.5
+        free_space_path_loss = 20 * np.log10(fc * distance) - 147.5
+        shadow_fading = np.random.normal(0, 10)  # Zero-mean Gaussian random variable with 10 dB std deviation
+        #path loss calculation
+        if distance <= dref:
+            path_loss = free_space_path_loss + shadow_fading
             H =  self.calculate_channel_gain_rayleigh(1)
         else:
-            path_loss = 20 * np.log10(fc * np.power(distance,2.75) / (np.power(dref,1.75))) - 147.5    
+            path_loss = free_space_path_loss + 30*np.log10(distance/dref) + shadow_fading   
             H =  self.calculate_channel_gain_rayleigh(0)
         # Rayleigh fading channel (standard Rayleigh distribution)
         # print(H)
 
-        shadow_fading = np.random.normal(0, 10)  # Zero-mean Gaussian random variable with 10 dB std deviation
-        channel_gain = (H**2) * (10**((-path_loss + shadow_fading) / 10))
+        
+        
+        channel_gain = (H**2) * (10**((-path_loss) / 10))
 
         return channel_gain
 
