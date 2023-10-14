@@ -48,7 +48,7 @@ class LifiAccessPoint:
         self.XR, self.YR = np.meshgrid(self.x, self.y)
 
     def get_channel_gain(self, user_x, user_y):
-        return self.channel_gain_los(user_x, user_y) + self.channel_gain_nlos(user_x, user_y)
+        return self.channel_gain_los(user_x, user_y) #+ self.channel_gain_nlos(user_x, user_y)
 
     def channel_gain_los(self, user_x, user_y):
         d = self.distance(user_x, user_y)        

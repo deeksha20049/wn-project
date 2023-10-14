@@ -11,17 +11,10 @@ class WiFiAccessPoint:
         
     #standard Rayleigh distribution
     def calculate_channel_gain_rayleigh(self,k):
-        # Combine real and imaginary parts to get X1
-        X1 = 1/np.sqrt(2)*(np.random.normal(0, 1) +1j*(np.random.normal(0, 1)));
-        imag_part = np.sqrt(k / (k + 1)) * np.exp(1j * np.radians(45))
-
-        # Combine real and imaginary parts to get H
-        # H = imag_part 
-
-        # Add the multipath component (X1) weighted by 1 / sqrt(k + 1)
-        H = imag_part + np.sqrt(1 / (k + 1)) * X1
-
-        return H
+        X0 = np.exp(1j * np.radians(45))
+        X1 = np.random.normal(0, 1) + 1j * np.random.normal(0, 1)
+        H = np.sqrt(k / (k + 1)) * X0 + np.sqrt(1 / (k + 1)) * X1
+        return np.abs(H)
     
     def calculate_distance(self, user_position):
         user_position = np.array(user_position)
@@ -29,28 +22,24 @@ class WiFiAccessPoint:
     
     def calculate_channel_gain(self, user, fc):
         distance = self.calculate_distance(user.position)
-        dref = 10.0  # Reference distance (in meters)
-
+        dref = 5.0  # Breakdown distance, d_BP (in meters)
         free_space_path_loss = 20 * np.log10(fc * distance) - 147.5
-        shadow_fading = np.random.normal(0, 10)  # Zero-mean Gaussian random variable with 10 dB std deviation
+
         #path loss calculation
         if distance <= dref:
+            shadow_fading = np.random.normal(0, 2) # std. dev. is 3dB  
             path_loss = free_space_path_loss + shadow_fading
             H =  self.calculate_channel_gain_rayleigh(1)
         else:
-            path_loss = free_space_path_loss + 30*np.log10(distance/dref) + shadow_fading   
-            H =  self.calculate_channel_gain_rayleigh(0)
-        # Rayleigh fading channel (standard Rayleigh distribution)
-        # print(H)
-
-        
-        
-        channel_gain = (H**2) * (10**((-path_loss) / 10))
-
+            shadow_fading = np.random.normal(0, 3.16) # std. dev. is 6dB
+            path_loss = free_space_path_loss + 35*np.log10(distance/dref) + shadow_fading   
+            H =  self.calculate_channel_gain_rayleigh(0)        
+        channel_gain = (H**2) * (10 ** (-path_loss/10))
         return channel_gain
 
     def calculate_snr(self, channel_gain):
         return (channel_gain * self.transmit_power) / (self.noise_psd * self.bandwidth)
+
 
 if __name__ == "__main__":
     # Simulation parameters
