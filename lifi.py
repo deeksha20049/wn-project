@@ -48,13 +48,15 @@ class LifiAccessPoint:
         self.XR, self.YR = np.meshgrid(self.x, self.y)
 
     def get_channel_gain(self, user_x, user_y):
+        # uncomment this line to include NLOS channel gain
         return self.channel_gain_los(user_x, user_y) #+ self.channel_gain_nlos(user_x, user_y)
 
     def channel_gain_los(self, user_x, user_y):
         d = self.distance(user_x, user_y)        
+        # both angles are equal due to symmetry
         incidence = self.angle_incidence(user_x, user_y)
+        irradiance = incidence           
         gc = self.optical_gain(incidence)
-        irradiance = incidence              # both angles are equal due to symmetry
         channel_gain = ((self.m + 1) * self.Apd * (np.cos(irradiance)**self.m) * np.cos(incidence) * \
                         self.gf * gc) / (2 * np.pi * d**2)
         return channel_gain
@@ -89,7 +91,8 @@ class LifiAccessPoint:
         for lifi in otherLifiAPs:
             summation_term += (self.Rpd * lifi.get_channel_gain(user_x, user_y) * self.Popt / self.k) ** 2
         numerator = (self.Rpd * self.get_channel_gain(user_x, user_y) * self.Popt / self.k) ** 2
-        denominator = self.Nlifi * self.Blifi + summation_term
+        # uncomment this line to include noise from other LiFi APs
+        denominator = self.Nlifi * self.Blifi #+ summation_term    
         return numerator / denominator
     
     def distance(self, user_x, user_y):
@@ -119,9 +122,11 @@ if __name__ == "__main__":
     optical_gain = lifi_ap1.optical_gain(ang_incidence)
     # print(ang_incidence)
     # print(optical_gain)
-
     # H = lifi_ap1.get_channel_gain(x, y)
+    
+    print('Location: ', 0, 0)
     snr = lifi_ap1.signal_to_noise_ratio(0, 0, otherLifiAPs=[lifi_ap2, lifi_ap3, lifi_ap4])
     print(snr)
+    print('Location: ', 1.25, 1.25)
     snr = lifi_ap1.signal_to_noise_ratio(1.25, 1.25, otherLifiAPs=[lifi_ap2, lifi_ap3, lifi_ap4])
     print(snr)
