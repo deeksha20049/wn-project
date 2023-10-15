@@ -92,7 +92,7 @@ class LifiAccessPoint:
             summation_term += (self.Rpd * lifi.get_channel_gain(user_x, user_y) * self.Popt / self.k) ** 2
         numerator = (self.Rpd * self.get_channel_gain(user_x, user_y) * self.Popt / self.k) ** 2
         # uncomment this line to include noise from other LiFi APs
-        denominator = self.Nlifi * self.Blifi #+ summation_term    
+        denominator = self.Nlifi * self.Blifi + summation_term    
         return numerator / denominator
     
     def distance(self, user_x, user_y):
