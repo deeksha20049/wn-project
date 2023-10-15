@@ -99,6 +99,7 @@ def bilinear_interpolation(x, y, h_values):
 # Room dimensions
 room_width = 5.0
 room_height = 5.0
+user_height = 0.8
 
 # Divide the floor into 0.1x0.1m squares
 grid_size = 0.1

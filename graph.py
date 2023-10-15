@@ -3,20 +3,27 @@ from mobility import RandomWaypointModel
 from lifi import LifiAccessPoint
 from wifi import WiFiAccessPoint
 from user import User
+import os
 import math
 import matplotlib.pyplot as plt 
+from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D 
 
 # Function to calculate H(W), H(L1), H(L2), H(L3), and H(L4) for a given point
 def calculate_snr(x, y):
     fc = 2.4e9
     user = User(user_id='U', position=(x, y, 0.8))
-    snr_W = wifi_ap.calculate_snr(wifi_ap.calculate_channel_gain(user, fc))
+    H_W = wifi_ap.calculate_channel_gain(user, fc)
+    H_L1 = lifi_aps[0].get_channel_gain(x, y)
+    H_L2 = lifi_aps[1].get_channel_gain(x, y)
+    H_L3 = lifi_aps[2].get_channel_gain(x, y)
+    H_L4 = lifi_aps[3].get_channel_gain(x, y)
+    snr_W = wifi_ap.calculate_snr(H_W)
     snr_L1 = lifi_aps[0].signal_to_noise_ratio(x, y, otherLifiAPs=lifi_aps[1:])
     snr_L2 = lifi_aps[1].signal_to_noise_ratio(x, y, otherLifiAPs=lifi_aps[:1] + lifi_aps[2:])
     snr_L3 = lifi_aps[2].signal_to_noise_ratio(x, y, otherLifiAPs=lifi_aps[:2] + lifi_aps[3:])
     snr_L4 = lifi_aps[3].signal_to_noise_ratio(x, y, otherLifiAPs=lifi_aps[:3])
-    return snr_W, snr_L1, snr_L2, snr_L3, snr_L4
+    return np.array([H_W, H_L1, H_L2, H_L3, H_L4]), np.array([snr_W, snr_L1, snr_L2, snr_L3, snr_L4])
 
 def my_ceil(a, precision=0):
     return np.round(a + 0.5 * 10**(-precision), precision)
@@ -100,6 +107,10 @@ def bilinear_interpolation(x, y, snr_values):
 room_width = 5.0
 room_height = 5.0
 
+# User position
+user_height = 0.8
+user_x, user_y = 0, 0
+
 # Divide the floor into 0.1x0.1m squares
 grid_size = 0.1
 x_grid = [round(i * grid_size, 1) for i in range(int(room_width / grid_size) + 1)]
@@ -120,59 +131,73 @@ lifi_aps = [
     LifiAccessPoint(x=3.75, y=1.25)
 ]
 
-
 # Create a dictionary to store snr values for each square
 snr_values = {}
 
-# Calculate snr values for each square on the floor
-for x in x_grid:
-    for y in y_grid:
-        snr_W, snr_L1, snr_L2, snr_L3, snr_L4 = calculate_snr(x, y)
-        snr_values[(x, y)] = {
-            'snr_W': snr_W,
-            'snr_L1': snr_L1,
-            'snr_L2': snr_L2,
-            'snr_L3': snr_L3,
-            'snr_L4': snr_L4
-        }
-
-# Initialize snr_values_matrix as a 3D NumPy array filled with zeros
+# Initialize H_values_matrix and snr_values_matrix as a 3D NumPy array filled with zeros
 snr_values_matrix = np.zeros((len(x_grid), len(y_grid), 5))
+H_values_matrix = np.zeros((len(x_grid), len(y_grid), 5))
 
-# Populate snr_values_matrix from snr_values dictionary
+# Calculate snr values for each square on the floor
 for i, x in enumerate(x_grid):
     for j, y in enumerate(y_grid):
-        square_snr_values = snr_values.get((x, y), {'snr_W': 0, 'snr_L1': 0, 'snr_L2': 0, 'snr_L3': 0, 'snr_L4': 0})
-        for k, key in enumerate(['snr_W', 'snr_L1', 'snr_L2', 'snr_L3', 'snr_L4']):
-            snr_values_matrix[i, j, k] = 10 * np.log10(square_snr_values[key])
+        channel_gains_ret, snr_values_ret = calculate_snr(x, y)
+        snr_values[(x, y)] = {
+            'snr_W': snr_values_ret[0],
+            'snr_L1': snr_values_ret[1],
+            'snr_L2': snr_values_ret[2],
+            'snr_L3': snr_values_ret[3],
+            'snr_L4': snr_values_ret[4]
+        }
+        H_values_matrix[i, j, :] = channel_gains_ret
+        snr_values_matrix[i, j, :] = snr_values_ret
+
+# Convert snr_values_matrix to dB
+snr_values_matrix_dB = 10 * np.log10(snr_values_matrix)
+
+# Convert h_values_matrix to dB
+H_values_matrix_dB = 10 * np.log10(H_values_matrix)
 
 
-# Create Z values for each channel
-Z_snr_W = snr_values_matrix[:, :, 0]  # snr_W
-Z_snr_L1 = snr_values_matrix[:, :, 1]  # snr_L1
-Z_snr_L2 = snr_values_matrix[:, :, 2]  # snr_L2
-Z_snr_L3 = snr_values_matrix[:, :, 3]  # snr_L3
-Z_snr_L4 = snr_values_matrix[:, :, 4]  # snr_L4
+'''
+Surface plot for Channel Gain and SNR
+'''
+def surface_plot(matrix, type, inDb, z_label, title):
+    os.makedirs(os.path.join(os.getcwd(), 'plots'), exist_ok=True)
 
-# Create a figure and a 3D axis for the surface plot
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-X, Y = np.meshgrid(x_grid, y_grid)
-# ax.plot_surface(X, Y, Z_snr_W, label='snr_W', alpha=1)
-ax.plot_surface(X, Y, Z_snr_L1, label='snr_L1', alpha=0.6, cmap='plasma')
-ax.plot_surface(X, Y, Z_snr_L2, label='snr_L2', alpha=0.6, cmap='inferno')
-ax.plot_surface(X, Y, Z_snr_L3, label='snr_L3', alpha=0.6, cmap='magma')
-ax.plot_surface(X, Y, Z_snr_L4, label='snr_L4', alpha=0.6, cmap='cividis')
-ax.set_xlabel('X')
-ax.set_ylabel('Y')
-ax.set_zlabel('SNR')
-plt.savefig('snr_surface_plot_lifi.png')
-plt.show()
+    # Create a surface plot for Channel_Gain for LiFi APs
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    X, Y = np.meshgrid(x_grid, y_grid)
+    ax.plot_surface(X, Y, matrix[:,:,1], label=f'{type}_L1', alpha=0.6, cmap=cm.coolwarm)
+    ax.plot_surface(X, Y, matrix[:,:,2], label=f'{type}_L2', alpha=0.6, cmap=cm.coolwarm)
+    ax.plot_surface(X, Y, matrix[:,:,3], label=f'{type}_L3', alpha=0.6, cmap=cm.coolwarm)
+    ax.plot_surface(X, Y, matrix[:,:,4], label=f'{type}_L4', alpha=0.6, cmap=cm.coolwarm)
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    # ax.set_zlabel('Channel_Gain_H')
+    ax.set_title(z_label)
+    ax.set_title(f'{title} for LiFi APs')
+    title1 = title.replace(' ', '_').lower()
+    # cm.Blues, cm.hsv, cm.coolwarm, cm.gist_rainbow, 
+    plt.savefig(os.path.join(os.getcwd(), f'plots\surface_plot_{title1}_lifi.png'))
+    plt.show()
 
-# Create surface plot for snr_W
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-X, Y = np.meshgrid(x_grid, y_grid)
-ax.plot_surface(X, Y, Z_snr_W, label='snr_W', alpha=1)
-plt.savefig('snr_surface_plot_wifi.png')
-plt.show()
+    # Create surface plot for Channel_Gain for WiFi AP
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    X, Y = np.meshgrid(x_grid, y_grid)
+    ax.plot_surface(X, Y, matrix[:,:,0], label=f'{type}_W', alpha=0.6)
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_title(z_label)
+    ax.set_title(f'{title} for WiFi AP')
+    title1 = title.replace(' ', '_').lower()
+    plt.savefig(os.path.join(os.getcwd(), f'plots\surface_plot_{title1}_wifi.png'))
+    plt.show()
+
+
+surface_plot(H_values_matrix, 'H', False, 'Channel_Gain_H', 'Channel Gain')
+surface_plot(H_values_matrix_dB, 'H', True, 'Channel_Gain_H_in_dB', 'Channel Gain in dB')
+surface_plot(snr_values_matrix, 'snr', False, 'SNR', 'SNR')
+surface_plot(snr_values_matrix_dB, 'snr', True, 'SNR_in_dB', 'SNR in dB')

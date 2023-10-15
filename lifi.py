@@ -109,13 +109,19 @@ class LifiAccessPoint:
 
 
 if __name__ == "__main__":
-    x, y = 1, 1
-    lifi_ap = LifiAccessPoint(x = x, y = y)
-    d = lifi_ap.distance(x, y)
-    ang_incidence = lifi_ap.angle_incidence(x, y)
-    optical_gain = lifi_ap.optical_gain(ang_incidence)
-    H = lifi_ap.get_channel_gain(x, y)
-    print(d)
-    print(ang_incidence)
-    print(optical_gain)
-    print(H)
+    x, y = 1.25, 1.25
+    lifi_ap1 = LifiAccessPoint(x=1.25, y=1.25)
+    lifi_ap2 = LifiAccessPoint(x=1.25, y=3.75)
+    lifi_ap3 = LifiAccessPoint(x=3.75, y=3.75)
+    lifi_ap4 = LifiAccessPoint(x=3.75, y=1.25)
+
+    ang_incidence = lifi_ap1.angle_incidence(x, y)
+    optical_gain = lifi_ap1.optical_gain(ang_incidence)
+    # print(ang_incidence)
+    # print(optical_gain)
+
+    # H = lifi_ap1.get_channel_gain(x, y)
+    snr = lifi_ap1.signal_to_noise_ratio(0, 0, otherLifiAPs=[lifi_ap2, lifi_ap3, lifi_ap4])
+    print(snr)
+    snr = lifi_ap1.signal_to_noise_ratio(1.25, 1.25, otherLifiAPs=[lifi_ap2, lifi_ap3, lifi_ap4])
+    print(snr)
