@@ -12,7 +12,7 @@ from mpl_toolkits.mplot3d import Axes3D
 # Function to calculate H(W), H(L1), H(L2), H(L3), and H(L4) for a given point
 def calculate_snr(x, y):
     fc = 2.4e9
-    user = User(user_id='U', position=(x, y, 0.8))
+    user = User(user_id='U', position=(x, y, user_height))
     H_W = wifi_ap.calculate_channel_gain(user, fc)
     H_L1 = lifi_aps[0].get_channel_gain(x, y)
     H_L2 = lifi_aps[1].get_channel_gain(x, y)
@@ -125,10 +125,10 @@ wifi_ap = WiFiAccessPoint(ap_id='W', ap_position=(2.5, 2.5, 5), transmit_power=0
 
 # LiFi access points parameters
 lifi_aps = [
-    LifiAccessPoint(x=1.25, y=1.25),
-    LifiAccessPoint(x=1.25, y=3.75),
-    LifiAccessPoint(x=3.75, y=3.75),
-    LifiAccessPoint(x=3.75, y=1.25)
+    LifiAccessPoint(x=1.25, y=1.25, h=user_height),
+    LifiAccessPoint(x=1.25, y=3.75, h=user_height),
+    LifiAccessPoint(x=3.75, y=3.75, h=user_height),
+    LifiAccessPoint(x=3.75, y=1.25, h=user_height)
 ]
 
 # Create a dictionary to store snr values for each square
@@ -201,3 +201,17 @@ surface_plot(H_values_matrix, 'H', False, 'Channel_Gain_H', 'Channel Gain')
 surface_plot(H_values_matrix_dB, 'H', True, 'Channel_Gain_H_in_dB', 'Channel Gain in dB')
 surface_plot(snr_values_matrix, 'snr', False, 'SNR', 'SNR')
 surface_plot(snr_values_matrix_dB, 'snr', True, 'SNR_in_dB', 'SNR in dB')
+
+# with open('snr_values_L1_matrix.txt', 'w') as f:
+#     f.write('     ')
+#     for a in range(len(x_grid)):
+#         f.write(f'{x_grid[a]}    ')
+#     f.write('\n')
+#     for a in range(len(snr_values_matrix)):
+#         f.write(f'{x_grid[a]} ')
+#         for b in range(len(snr_values_matrix[a])):
+#             if H_values_matrix[a][b][1] > 0:
+#                 f.write(f' {1e3*H_values_matrix[a][b][1]:.3f} ')
+#             else:
+#                 f.write(f'{1e3*H_values_matrix[a][b][1]:.3f} ')
+#         f.write('\n')

@@ -56,6 +56,7 @@ class LifiAccessPoint:
         irradiance = incidence           
         gc = self.optical_gain(incidence)
         channel_gain = ((self.m + 1) * self.Apd * (np.cos(irradiance)**self.m) * np.cos(incidence) * self.gf * gc) / (2 * np.pi * (d**2))
+        # print(incidence, irradiance, channel_gain, self.m, gc, self.Apd, self.gf)
         return channel_gain
     
     def channel_gain_nlos(self, user_x, user_y):
@@ -86,10 +87,13 @@ class LifiAccessPoint:
     def signal_to_noise_ratio(self, user_x, user_y, otherLifiAPs:List):
         summation_term = 0
         for lifi in otherLifiAPs:
+            # print(f'Lifi at {lifi.lifi_position} has gain', lifi.get_channel_gain(user_x, user_y))
             summation_term += (lifi.Rpd * lifi.get_channel_gain(user_x, user_y) * lifi.Popt / lifi.k) ** 2
+        # print('self gain: ', self.get_channel_gain(user_x, user_y))
         numerator = (self.Rpd * self.get_channel_gain(user_x, user_y) * self.Popt / self.k) ** 2
         # uncomment this line to include noise from other LiFi APs
         denominator = self.Nlifi * self.Blifi + summation_term 
+        # print(f'numerator: {numerator}, denominator: {denominator}, sum: {summation_term}')   
         return numerator / denominator
     
     def distance(self, user_x, user_y):
