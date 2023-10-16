@@ -2,8 +2,8 @@ import numpy as np
 from typing import List
 
 class LifiAccessPoint:
-    def __init__(self, x, y, Φ_1by2=60, Apd=1e-4, ref_index=1.5, FOV=90, gf=1,
-                P_total=20, room_x=5, room_y=5, room_z=5, h=0.8, Rpd=0.53, pw=0.8, Popt=3, k=3, Nlifi=10e-21, Blifi=40e6):
+    def __init__(self, x, y, Φ_1by2=60, Apd=100*1e-4, ref_index=1.5, FOV=90, gf=1,
+            room_x=5, room_y=5, room_z=5, h=0.8, Rpd=0.53, pw=0.8, Popt=3, k=3, Nlifi=1e-21, Blifi=20*1e6):
         # attribute for Half-intensity radiation angle (Φ1/2)
         self.Φ_1by2 = Φ_1by2 * np.pi / 180
         self.m = -np.log(2) / np.log(np.cos(np.radians(Φ_1by2)))
@@ -15,8 +15,6 @@ class LifiAccessPoint:
         self.Apd = Apd
         # gain of the optical filter, gf
         self.gf = gf
-        # total optical power transmitted by the LED, P_total
-        self.P_total = P_total
         # length of the room in the x-direction (horizontal) in meters.
         self.room_x = room_x
         # length of the room in the y-direction (vertical) in meters.
@@ -57,8 +55,7 @@ class LifiAccessPoint:
         incidence = self.angle_incidence(user_x, user_y)
         irradiance = incidence           
         gc = self.optical_gain(incidence)
-        channel_gain = ((self.m + 1) * self.Apd * (np.cos(irradiance)**self.m) * np.cos(incidence) * \
-                        self.gf * gc) / (2 * np.pi * d**2)
+        channel_gain = ((self.m + 1) * self.Apd * (np.cos(irradiance)**self.m) * np.cos(incidence) * self.gf * gc) / (2 * np.pi * (d**2))
         return channel_gain
     
     def channel_gain_nlos(self, user_x, user_y):
@@ -89,10 +86,10 @@ class LifiAccessPoint:
     def signal_to_noise_ratio(self, user_x, user_y, otherLifiAPs:List):
         summation_term = 0
         for lifi in otherLifiAPs:
-            summation_term += (self.Rpd * lifi.get_channel_gain(user_x, user_y) * self.Popt / self.k) ** 2
+            summation_term += (lifi.Rpd * lifi.get_channel_gain(user_x, user_y) * lifi.Popt / lifi.k) ** 2
         numerator = (self.Rpd * self.get_channel_gain(user_x, user_y) * self.Popt / self.k) ** 2
         # uncomment this line to include noise from other LiFi APs
-        denominator = self.Nlifi * self.Blifi + summation_term    
+        denominator = self.Nlifi * self.Blifi + summation_term 
         return numerator / denominator
     
     def distance(self, user_x, user_y):
@@ -128,5 +125,5 @@ if __name__ == "__main__":
     snr = lifi_ap1.signal_to_noise_ratio(0, 0, otherLifiAPs=[lifi_ap2, lifi_ap3, lifi_ap4])
     print(snr)
     print('Location: ', 1.25, 1.25)
-    snr = lifi_ap1.signal_to_noise_ratio(1.25, 1.25, otherLifiAPs=[lifi_ap2, lifi_ap3, lifi_ap4])
+    snr = lifi_ap1.signal_to_noise_ratio(1.2, 1.2, otherLifiAPs=[lifi_ap2, lifi_ap3, lifi_ap4])
     print(snr)
