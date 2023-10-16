@@ -2,8 +2,8 @@ import numpy as np
 from typing import List
 
 class LifiAccessPoint:
-    def __init__(self, x, y, Φ_1by2=60, Apd=1e-4, ref_index=1.5, FOV=90, gf=1,
-                P_total=20, room_x=5, room_y=5, room_z=5, h=0.8, Rpd=0.53, Popt=3, k=3, Nlifi=10e-21, Blifi=20e6):
+    def __init__(self, x, y, Φ_1by2=60, Apd=100*1e-4, ref_index=1.5, FOV=90, gf=1,
+            room_x=5, room_y=5, room_z=5, h=0.8, Rpd=0.53, pw=0.8, Popt=3, k=3, Nlifi=1e-21, Blifi=20*1e6):
         # attribute for Half-intensity radiation angle (Φ1/2)
         self.Φ_1by2 = Φ_1by2 * np.pi / 180
         self.m = -np.log(2) / np.log(np.cos(np.radians(Φ_1by2)))
@@ -11,13 +11,10 @@ class LifiAccessPoint:
         self.ref_index = ref_index
         # FoV semi-angle of PD, Ψmax
         self.FOV = FOV * np.pi / 180
-        self.G_Con = (ref_index**2) / np.sin(self.FOV)
         # physical area of the PD, Apd
         self.Apd = Apd
         # gain of the optical filter, gf
         self.gf = gf
-        # total optical power transmitted by the LED, P_total
-        self.P_total = P_total
         # length of the room in the x-direction (horizontal) in meters.
         self.room_x = room_x
         # length of the room in the y-direction (vertical) in meters.
@@ -38,6 +35,8 @@ class LifiAccessPoint:
         self.Nlifi = Nlifi
         # Bandwidth of LiFi AP, BLiFi
         self.Blifi = Blifi
+        # Wall reflectivity, pw
+        self.pw = pw
         
         # Number of points in the x and y directions
         self.Nx = int(room_x * 10)
@@ -47,21 +46,50 @@ class LifiAccessPoint:
         self.XR, self.YR = np.meshgrid(self.x, self.y)
 
     def get_channel_gain(self, user_x, user_y):
-        # channel gain for LOS component
+        # uncomment this line to include NLOS channel gain
+        return self.channel_gain_los(user_x, user_y) #+ self.channel_gain_nlos(user_x, user_y)
+
+    def channel_gain_los(self, user_x, user_y):
         d = self.distance(user_x, user_y)        
+        # both angles are equal due to symmetry
         incidence = self.angle_incidence(user_x, user_y)
+        irradiance = incidence           
         gc = self.optical_gain(incidence)
-        irradiance = incidence   # both angles are equal due to symmetry
-        channel_gain = ((self.m + 1) * self.Apd * (np.cos(irradiance)**self.m) * np.cos(incidence) * \
-                        self.gf * gc) / (2 * np.pi * d**2)
+        channel_gain = ((self.m + 1) * self.Apd * (np.cos(irradiance)**self.m) * np.cos(incidence) * self.gf * gc) / (2 * np.pi * (d**2))
         return channel_gain
+    
+    def channel_gain_nlos(self, user_x, user_y):
+        boxes_per_meter = 10
+        dl, dh = 1/boxes_per_meter, 1/boxes_per_meter
+        height_coord = np.arange(self.h, self.room_z, dh)
+        length_coord = np.arange(self.h, self.room_x, dl)
+        user_position = np.array([user_x, user_y, self.h])
+        integration = 0
+        
+        for height in height_coord:
+            print(f'{height:.3f}  ')
+            for length in length_coord:
+                locations = [np.array([length, 0, height]), np.array([length, self.room_y, height]),
+                            np.array([0, length, height]), np.array([self.room_x, length, height])]
+                for curr_location in locations:
+                    d_iw = np.linalg.norm(curr_location - self.lifi_position)
+                    d_wu = np.linalg.norm(user_position - curr_location)
+                    theta_iw = np.arccos((self.room_z - height) / d_iw)
+                    ϑ_iw = 90 - theta_iw
+                    phi_wu = np.arccos((height - self.h) / d_wu)
+                    ϑ_wu = 90 - phi_wu
+                    numerator = (self.m + 1) * self.Apd * self.pw * (np.cos(theta_iw)**self.m) * \
+                                self.gf * self.optical_gain(phi_wu) * np.cos(phi_wu) * np.cos(ϑ_iw) * np.cos(ϑ_wu)
+                    integration += (numerator * dl * dh) / (2 * (np.pi * d_iw * d_wu)**2)
+        return integration
     
     def signal_to_noise_ratio(self, user_x, user_y, otherLifiAPs:List):
         summation_term = 0
         for lifi in otherLifiAPs:
-            summation_term += (self.Rpd * lifi.get_channel_gain(user_x, user_y) * self.Popt / self.k) ** 2
+            summation_term += (lifi.Rpd * lifi.get_channel_gain(user_x, user_y) * lifi.Popt / lifi.k) ** 2
         numerator = (self.Rpd * self.get_channel_gain(user_x, user_y) * self.Popt / self.k) ** 2
-        denominator = self.Nlifi * self.Blifi + summation_term
+        # uncomment this line to include noise from other LiFi APs
+        denominator = self.Nlifi * self.Blifi + summation_term 
         return numerator / denominator
     
     def distance(self, user_x, user_y):
@@ -81,13 +109,21 @@ class LifiAccessPoint:
 
 
 if __name__ == "__main__":
-    x, y = 1, 1
-    lifi_ap = LifiAccessPoint(x = x, y = y)
-    d = lifi_ap.distance(x, y)
-    ang_incidence = lifi_ap.angle_incidence(x, y)
-    optical_gain = lifi_ap.optical_gain(ang_incidence)
-    H = lifi_ap.get_channel_gain(x, y)
-    print(d)
-    print(ang_incidence)
-    print(optical_gain)
-    print(H)
+    x, y = 1.25, 1.25
+    lifi_ap1 = LifiAccessPoint(x=1.25, y=1.25)
+    lifi_ap2 = LifiAccessPoint(x=1.25, y=3.75)
+    lifi_ap3 = LifiAccessPoint(x=3.75, y=3.75)
+    lifi_ap4 = LifiAccessPoint(x=3.75, y=1.25)
+
+    ang_incidence = lifi_ap1.angle_incidence(x, y)
+    optical_gain = lifi_ap1.optical_gain(ang_incidence)
+    # print(ang_incidence)
+    # print(optical_gain)
+    # H = lifi_ap1.get_channel_gain(x, y)
+    
+    print('Location: ', 0, 0)
+    snr = lifi_ap1.signal_to_noise_ratio(0, 0, otherLifiAPs=[lifi_ap2, lifi_ap3, lifi_ap4])
+    print(snr)
+    print('Location: ', 1.25, 1.25)
+    snr = lifi_ap1.signal_to_noise_ratio(1.2, 1.2, otherLifiAPs=[lifi_ap2, lifi_ap3, lifi_ap4])
+    print(snr)
