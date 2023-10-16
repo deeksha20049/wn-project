@@ -18,13 +18,21 @@ def calculate_channel_gains(x, y):
     H_L4 = lifi_aps[3].get_channel_gain(x, y)
     return H_W, H_L1, H_L2, H_L3, H_L4
 
+# Function to calculate H(W), H(L1), H(L2), H(L3), and H(L4) for a given point
 def calculate_snr(x, y):
-    SNR_W = wifi_ap.calculate_snr(h_values[(x, y)])
-    SNR_L1 = lifi_aps[0].signal_to_noise_ratio(x, y, lifi_aps[1:])
-    SNR_L2 = lifi_aps[1].signal_to_noise_ratio(x, y, lifi_aps[:1] + lifi_aps[2:])
-    SNR_L3 = lifi_aps[2].signal_to_noise_ratio(x, y, lifi_aps[:2] + lifi_aps[3:])
-    SNR_L4 = lifi_aps[3].signal_to_noise_ratio(x, y, lifi_aps[:3])
-    return SNR_W, SNR_L1, SNR_L2, SNR_L3, SNR_L4
+    fc = 2.4e9
+    user = User(user_id='U', position=(x, y, 0.8))
+    H_W = wifi_ap.calculate_channel_gain(user, fc)
+    H_L1 = lifi_aps[0].get_channel_gain(x, y)
+    H_L2 = lifi_aps[1].get_channel_gain(x, y)
+    H_L3 = lifi_aps[2].get_channel_gain(x, y)
+    H_L4 = lifi_aps[3].get_channel_gain(x, y)
+    snr_W = wifi_ap.calculate_snr(H_W)
+    snr_L1 = lifi_aps[0].signal_to_noise_ratio(x, y, otherLifiAPs=lifi_aps[1:])
+    snr_L2 = lifi_aps[1].signal_to_noise_ratio(x, y, otherLifiAPs=lifi_aps[:1] + lifi_aps[2:])
+    snr_L3 = lifi_aps[2].signal_to_noise_ratio(x, y, otherLifiAPs=lifi_aps[:2] + lifi_aps[3:])
+    snr_L4 = lifi_aps[3].signal_to_noise_ratio(x, y, otherLifiAPs=lifi_aps[:3])
+    return np.array([H_W, H_L1, H_L2, H_L3, H_L4]), np.array([snr_W, snr_L1, snr_L2, snr_L3, snr_L4])
 
 def my_ceil(a, precision=0):
     return np.round(a + 0.5 * 10**(-precision), precision)
@@ -133,44 +141,32 @@ lifi_aps = [
     LifiAccessPoint(x=3.75, y=1.25)
 ]
 
+# Create a dictionary to store snr values for each square
+snr_values = {}
 
-# Create a dictionary to store H values for each square
-h_values = {}
+# Initialize H_values_matrix and snr_values_matrix as a 3D NumPy array filled with zeros
+snr_values_matrix = np.zeros((len(x_grid), len(y_grid), 5))
+H_values_matrix = np.zeros((len(x_grid), len(y_grid), 5))
 
-# Calculate H values for each square on the floor
-for x in x_grid:
-    for y in y_grid:
-        H_W, H_L1, H_L2, H_L3, H_L4 = calculate_channel_gains(x, y)
-        h_values[(x, y)] = {
-            'H_W': H_W,
-            'H_L1': H_L1,
-            'H_L2': H_L2,
-            'H_L3': H_L3,
-            'H_L4': H_L4
+# Calculate snr values for each square on the floor
+for i, x in enumerate(x_grid):
+    for j, y in enumerate(y_grid):
+        channel_gains_ret, snr_values_ret = calculate_snr(x, y)
+        snr_values[(x, y)] = {
+            'snr_W': snr_values_ret[0],
+            'snr_L1': snr_values_ret[1],
+            'snr_L2': snr_values_ret[2],
+            'snr_L3': snr_values_ret[3],
+            'snr_L4': snr_values_ret[4]
         }
+        H_values_matrix[i, j, :] = channel_gains_ret
+        snr_values_matrix[i, j, :] = snr_values_ret
 
-# Initialize h_values_matrix as a 3D NumPy array filled with zeros
-h_values_matrix = np.zeros((len(x_grid), len(y_grid), 5))
+# Convert snr_values_matrix to dB
+snr_values_matrix_dB = 10 * np.log10(snr_values_matrix)
 
-# Populate h_values_matrix from h_values dictionary
-for i, x in enumerate(x_grid):
-    for j, y in enumerate(y_grid):
-        square_h_values = h_values.get((x, y), {'H_W': 0, 'H_L1': 0, 'H_L2': 0, 'H_L3': 0, 'H_L4': 0})
-        for k, key in enumerate(['H_W', 'H_L1', 'H_L2', 'H_L3', 'H_L4']):
-            h_values_matrix[i, j, k] = square_h_values[key]
-
-
-# Populate h_values_matrix from h_values dictionary
-for i, x in enumerate(x_grid):
-    for j, y in enumerate(y_grid):
-        square_h_values = h_values.get((x, y), {'H_W': 0, 'H_L1': 0, 'H_L2': 0, 'H_L3': 0, 'H_L4': 0})
-        for k, key in enumerate(['H_W', 'H_L1', 'H_L2', 'H_L3', 'H_L4']):
-            h_values_matrix[i, j, k] = square_h_values[key]
-
-# Add a print statement here to see the content of h_values_matrix
-print("h_values_matrix:")
-print(h_values_matrix)
-
+# Convert h_values_matrix to dB
+H_values_matrix_dB = 10 * np.log10(H_values_matrix)
 
 # # Create a dictionary to store H values for each square
 # h_values = {}
@@ -266,30 +262,30 @@ for _ in range(10):  # Simulate for 10 seconds (10 steps)
 
 
 # Create a figure and a 3D axis for the surface plot
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
+# fig = plt.figure()
+# ax = fig.add_subplot(111, projection='3d')
 
-# Create X and Y mesh grids for plotting
-X, Y = np.meshgrid(x_grid, y_grid)
+# # Create X and Y mesh grids for plotting
+# X, Y = np.meshgrid(x_grid, y_grid)
 
-# Create Z values for each channel
-Z_H_W = h_values_matrix[:, :, 0]  # H_W
-Z_H_L1 = h_values_matrix[:, :, 1]  # H_L1
-Z_H_L2 = h_values_matrix[:, :, 2]  # H_L2
-Z_H_L3 = h_values_matrix[:, :, 3]  # H_L3
-Z_H_L4 = h_values_matrix[:, :, 4]  # H_L4
+# # Create Z values for each channel
+# Z_H_W = h_values_matrix[:, :, 0]  # H_W
+# Z_H_L1 = h_values_matrix[:, :, 1]  # H_L1
+# Z_H_L2 = h_values_matrix[:, :, 2]  # H_L2
+# Z_H_L3 = h_values_matrix[:, :, 3]  # H_L3
+# Z_H_L4 = h_values_matrix[:, :, 4]  # H_L4
 
-# Create the surface plots for each channel
-ax.plot_surface(X, Y, Z_H_W, cmap='viridis', label='H_W', alpha=0.8)
-ax.plot_surface(X, Y, Z_H_L1, cmap='plasma', label='H_L1', alpha=0.8)
-ax.plot_surface(X, Y, Z_H_L2, cmap='inferno', label='H_L2', alpha=0.8)
-ax.plot_surface(X, Y, Z_H_L3, cmap='magma', label='H_L3', alpha=0.8)
-ax.plot_surface(X, Y, Z_H_L4, cmap='cividis', label='H_L4', alpha=0.8)
+# # Create the surface plots for each channel
+# ax.plot_surface(X, Y, Z_H_W, cmap='viridis', label='H_W', alpha=0.8)
+# ax.plot_surface(X, Y, Z_H_L1, cmap='plasma', label='H_L1', alpha=0.8)
+# ax.plot_surface(X, Y, Z_H_L2, cmap='inferno', label='H_L2', alpha=0.8)
+# ax.plot_surface(X, Y, Z_H_L3, cmap='magma', label='H_L3', alpha=0.8)
+# ax.plot_surface(X, Y, Z_H_L4, cmap='cividis', label='H_L4', alpha=0.8)
 
-# Set labels for the axes
-ax.set_xlabel('X')
-ax.set_ylabel('Y')
-ax.set_zlabel('Channel Gain')
+# # Set labels for the axes
+# ax.set_xlabel('X')
+# ax.set_ylabel('Y')
+# ax.set_zlabel('Channel Gain')
 
-# Show the plot
-plt.show()
+# # Show the plot
+# plt.show()
