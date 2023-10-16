@@ -169,19 +169,19 @@ snr_values_matrix_dB = 10 * np.log10(snr_values_matrix)
 H_values_matrix_dB = 10 * np.log10(H_values_matrix)
 
 # # Create a dictionary to store H values for each square
-# h_values = {}
+h_values = {}
 
-# # Calculate H values for each square on the floor
-# for x in x_grid:
-#     for y in y_grid:
-#         H_W, H_L1, H_L2, H_L3, H_L4 = calculate_channel_gains(x, y)
-#         h_values[(x, y)] = {
-#             'H_W': H_W,
-#             'H_L1': H_L1,
-#             'H_L2': H_L2,
-#             'H_L3': H_L3,
-#             'H_L4': H_L4
-#         }
+# Calculate H values for each square on the floor
+for x in x_grid:
+    for y in y_grid:
+        H_W, H_L1, H_L2, H_L3, H_L4 = calculate_channel_gains(x, y)
+        h_values[(x, y)] = {
+            'H_W': H_W,
+            'H_L1': H_L1,
+            'H_L2': H_L2,
+            'H_L3': H_L3,
+            'H_L4': H_L4
+        }
 
 # Create a user mobility model
 user_model = RandomWaypointModel(room_width, room_height, max_speed=1.0, min_pause=1, max_pause=1)
@@ -225,6 +225,44 @@ for _ in range(10):  # Simulate for 10 seconds (10 steps)
         print(f"Connecting to LiFi ({router_number})")
 
     print()
+
+
+# for 10 users with 10 diff objects
+
+users = []
+
+for _ in range(10):
+    user_model = RandomWaypointModel(room_width, room_height, max_speed=1.0, min_pause=1, max_pause=1)
+    user_x, user_y = np.random.uniform(0, room_width), np.random.uniform(0, room_height)
+    user_height = 0.8  
+    user = User(user_id=f'U{_}', position=(user_x, user_y, user_height))
+    users.append((user, user_model))
+
+# Simulate users' movement and calculate H values for each user
+for _ in range(10):  # Simulate for 10 seconds
+    for user, user_model in users:
+        user_model.updatePositions(0.1)  # Move the user every 1 second
+        user_x, user_y = user_model.get_position()
+        print(f"User {user.user_id} at ({user_x:.2f}, {user_y:.2f}), Height: {user_height:.2f}")
+
+        # Calculate H values and SNR for the current user's position
+        H_values, snr_values = calculate_snr(user_x, user_y)
+
+        print(f"H(W): {H_values[0]}")
+        print(f"H(L1): {H_values[1]}")
+        print(f"H(L2): {H_values[2]}")
+        print(f"H(L3): {H_values[3]}")
+        print(f"H(L4): {H_values[4]}")
+
+        best_router = np.argmax(snr_values)
+        if best_router == 0:
+            print("Connecting to WiFi (W)")
+        else:
+            router_number = best_router
+            print(f"Connecting to LiFi ({router_number})")
+
+        print()
+
 
 # ---
 
