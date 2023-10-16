@@ -18,6 +18,14 @@ def calculate_channel_gains(x, y):
     H_L4 = lifi_aps[3].get_channel_gain(x, y)
     return H_W, H_L1, H_L2, H_L3, H_L4
 
+def calculate_snr(x, y):
+    SNR_W = wifi_ap.calculate_snr(h_values[(x, y)])
+    SNR_L1 = lifi_aps[0].signal_to_noise_ratio(x, y, lifi_aps[1:])
+    SNR_L2 = lifi_aps[1].signal_to_noise_ratio(x, y, lifi_aps[:1] + lifi_aps[2:])
+    SNR_L3 = lifi_aps[2].signal_to_noise_ratio(x, y, lifi_aps[:2] + lifi_aps[3:])
+    SNR_L4 = lifi_aps[3].signal_to_noise_ratio(x, y, lifi_aps[:3])
+    return SNR_W, SNR_L1, SNR_L2, SNR_L3, SNR_L4
+
 def my_ceil(a, precision=0):
     return np.round(a + 0.5 * 10**(-precision), precision)
 
