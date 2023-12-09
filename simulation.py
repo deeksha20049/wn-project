@@ -327,3 +327,45 @@ for _ in range(10):  # Simulate for 10 seconds
 
 # # Show the plot
 # plt.show()
+
+# Create a figure for the plot
+plt.figure(figsize=(8, 8))
+
+# Plot the grid
+for x in x_grid:
+    plt.axvline(x, color='gray', linewidth=0.5)
+for y in y_grid:
+    plt.axhline(y, color='gray', linewidth=0.5)
+
+# Simulate the user's movement and plot their positions
+user_positions_x = []
+user_positions_y = []
+for _ in range(100):  # Simulate for 10 seconds (100 steps)
+    user_model.updatePositions(0.1)  # Move the user every 0.1 second
+    user_x, user_y = user_model.get_position()
+    print(f"User {user.user_id} at ({user_x:.2f}, {user_y:.2f}), Height: {user_height:.2f}")
+
+
+    # Store the user's positions for plotting
+    user_positions_x.append(user_x)
+    user_positions_y.append(user_y)
+
+    # Pause briefly at each location (optional, for visualization)
+    for _ in range(10):
+        user_positions_x.append(user_x)
+        user_positions_y.append(user_y)
+
+# Plot the user's positions
+plt.plot(user_positions_x, user_positions_y, label=f'User {user.user_id}', marker='o')
+
+# Add labels to the plot
+plt.xlabel('X Position (m)')
+plt.ylabel('Y Position (m)')
+plt.title(f'Movements of User {user.user_id}')
+
+# Show a legend for user colors
+plt.legend()
+
+# Show the grid and user positions plot
+plt.grid()
+plt.show()
