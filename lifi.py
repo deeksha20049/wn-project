@@ -39,11 +39,13 @@ class LifiAccessPoint:
         self.pw = pw
         
         # Number of points in the x and y directions
-        self.Nx = int(room_x * 10)
-        self.Ny = int(room_y * 10)
-        self.x = np.linspace(0, room_x, self.Nx)
-        self.y = np.linspace(0, room_y, self.Ny)
-        self.XR, self.YR = np.meshgrid(self.x, self.y)
+        # self.Nx = int(room_x * 10)
+        # self.Ny = int(room_y * 10)
+        # self.x = np.linspace(0, room_x, self.Nx)
+        # self.y = np.linspace(0, room_y, self.Ny)
+        # self.XR, self.YR = np.meshgrid(self.x, self.y)
+        # print(self.XR)
+        # print(self.XR.shape)
 
     def get_channel_gain(self, user_x, user_y):
         # uncomment this line to include NLOS channel gain
@@ -86,9 +88,9 @@ class LifiAccessPoint:
     
     def signal_to_noise_ratio(self, user_x, user_y, otherLifiAPs:List):
         summation_term = 0
-        for lifi in otherLifiAPs:
-            # print(f'Lifi at {lifi.lifi_position} has gain', lifi.get_channel_gain(user_x, user_y))
-            summation_term += (lifi.Rpd * lifi.get_channel_gain(user_x, user_y) * lifi.Popt / lifi.k) ** 2
+        # for lifi in otherLifiAPs:
+        #     # print(f'Lifi at {lifi.lifi_position} has gain', lifi.get_channel_gain(user_x, user_y))
+        #     summation_term += (lifi.Rpd * lifi.get_channel_gain(user_x, user_y) * lifi.Popt / lifi.k) ** 2
         # print('self gain: ', self.get_channel_gain(user_x, user_y))
         numerator = (self.Rpd * self.get_channel_gain(user_x, user_y) * self.Popt / self.k) ** 2
         # uncomment this line to include noise from other LiFi APs
@@ -115,19 +117,19 @@ class LifiAccessPoint:
 if __name__ == "__main__":
     x, y = 1.25, 1.25
     lifi_ap1 = LifiAccessPoint(x=1.25, y=1.25)
-    lifi_ap2 = LifiAccessPoint(x=1.25, y=3.75)
-    lifi_ap3 = LifiAccessPoint(x=3.75, y=3.75)
-    lifi_ap4 = LifiAccessPoint(x=3.75, y=1.25)
+    # lifi_ap2 = LifiAccessPoint(x=1.25, y=3.75)
+    # lifi_ap3 = LifiAccessPoint(x=3.75, y=3.75)
+    # lifi_ap4 = LifiAccessPoint(x=3.75, y=1.25)
 
-    ang_incidence = lifi_ap1.angle_incidence(x, y)
-    optical_gain = lifi_ap1.optical_gain(ang_incidence)
-    # print(ang_incidence)
-    # print(optical_gain)
-    # H = lifi_ap1.get_channel_gain(x, y)
+    # ang_incidence = lifi_ap1.angle_incidence(x, y)
+    # optical_gain = lifi_ap1.optical_gain(ang_incidence)
+    # # print(ang_incidence)
+    # # print(optical_gain)
+    # # H = lifi_ap1.get_channel_gain(x, y)
     
-    print('Location: ', 0, 0)
-    snr = lifi_ap1.signal_to_noise_ratio(0, 0, otherLifiAPs=[lifi_ap2, lifi_ap3, lifi_ap4])
-    print(snr)
-    print('Location: ', 1.25, 1.25)
-    snr = lifi_ap1.signal_to_noise_ratio(1.2, 1.2, otherLifiAPs=[lifi_ap2, lifi_ap3, lifi_ap4])
-    print(snr)
+    # print('Location: ', 0, 0)
+    # snr = lifi_ap1.signal_to_noise_ratio(0, 0, otherLifiAPs=[lifi_ap2, lifi_ap3, lifi_ap4])
+    # print(snr)
+    # print('Location: ', 1.25, 1.25)
+    # snr = lifi_ap1.signal_to_noise_ratio(1.2, 1.2, otherLifiAPs=[lifi_ap2, lifi_ap3, lifi_ap4])
+    # print(snr)
