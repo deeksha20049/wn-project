@@ -62,40 +62,48 @@ class LifiAccessPoint:
         return channel_gain
     
     def channel_gain_nlos(self, user_x, user_y):
-        boxes_per_meter = 10
-        dl, dh = 1/boxes_per_meter, 1/boxes_per_meter
-        height_coord = np.arange(self.h, self.room_z, dh)
-        length_coord = np.arange(self.h, self.room_x, dl)
-        user_position = np.array([user_x, user_y, self.h])
-        integration = 0
+        # boxes_per_meter = 10
+        # dl, dh = 1/boxes_per_meter, 1/boxes_per_meter
+        # height_coord = np.arange(self.h, self.room_z, dh)
+        # length_coord = np.arange(self.h, self.room_x, dl)
+        # user_position = np.array([user_x, user_y, self.h])
+        # integration = 0
         
-        for height in height_coord:
-            print(f'{height:.3f}  ')
-            for length in length_coord:
-                locations = [np.array([length, 0, height]), np.array([length, self.room_y, height]),
-                            np.array([0, length, height]), np.array([self.room_x, length, height])]
-                for curr_location in locations:
-                    d_iw = np.linalg.norm(curr_location - self.lifi_position)
-                    d_wu = np.linalg.norm(user_position - curr_location)
-                    theta_iw = np.arccos((self.room_z - height) / d_iw)
-                    ϑ_iw = 90 - theta_iw
-                    phi_wu = np.arccos((height - self.h) / d_wu)
-                    ϑ_wu = 90 - phi_wu
-                    numerator = (self.m + 1) * self.Apd * self.pw * (np.cos(theta_iw)**self.m) * \
-                                self.gf * self.optical_gain(phi_wu) * np.cos(phi_wu) * np.cos(ϑ_iw) * np.cos(ϑ_wu)
-                    integration += (numerator * dl * dh) / (2 * (np.pi * d_iw * d_wu)**2)
-        return integration
+        # for height in height_coord:
+        #     # print(f'{height:.3f}  ')
+        #     for length in length_coord:
+        #         locations = [np.array([length, 0, height]), np.array([length, self.room_y, height]),
+        #                     np.array([0, length, height]), np.array([self.room_x, length, height])]
+        #         for curr_location in locations:
+        #             d_iw = np.linalg.norm(curr_location - self.lifi_position)
+        #             d_wu = np.linalg.norm(user_position - curr_location)
+        #             theta_iw = np.arccos((self.room_z - height) / d_iw)
+        #             ϑ_iw = 90 - theta_iw
+        #             phi_wu = np.arccos((height - self.h) / d_wu)
+        #             ϑ_wu = 90 - phi_wu
+        #             numerator = (self.m + 1) * self.Apd * self.pw * (np.cos(theta_iw)**self.m) * \
+        #                         self.gf * self.optical_gain(phi_wu) * np.cos(phi_wu) * np.cos(ϑ_iw) * np.cos(ϑ_wu)
+        #             integration += (numerator * dl * dh) / (2 * (np.pi * d_iw * d_wu)**2)
+        # return integration
+        # Read files
+        return 1
     
-    def signal_to_noise_ratio(self, user_x, user_y, otherLifiAPs:List):
+    def signal_to_noise_ratio(self, user_x, user_y, otherLifiAPs:List=None):
         summation_term = 0
         # for lifi in otherLifiAPs:
-        #     # print(f'Lifi at {lifi.lifi_position} has gain', lifi.get_channel_gain(user_x, user_y))
-        #     summation_term += (lifi.Rpd * lifi.get_channel_gain(user_x, user_y) * lifi.Popt / lifi.k) ** 2
+            # print(f'Lifi at {lifi.lifi_position} has gain', lifi.get_channel_gain(user_x, user_y))
+            # summation_term += (lifi.Rpd * lifi.get_channel_gain(user_x, user_y) * lifi.Popt / lifi.k) ** 2
         # print('self gain: ', self.get_channel_gain(user_x, user_y))
         numerator = (self.Rpd * self.get_channel_gain(user_x, user_y) * self.Popt / self.k) ** 2
         # uncomment this line to include noise from other LiFi APs
         denominator = self.Nlifi * self.Blifi + summation_term 
         # print(f'numerator: {numerator}, denominator: {denominator}, sum: {summation_term}')   
+        return numerator / denominator
+    
+    
+    def signal_to_noise_ratio_nlos(self, user_x, user_y, otherLifiAPs:List=None):
+        numerator = (self.Rpd * self.channel_gain_nlos(user_x, user_y) * self.Popt / self.k) ** 2
+        denominator = self.Nlifi * self.Blifi  
         return numerator / denominator
     
     def distance(self, user_x, user_y):
