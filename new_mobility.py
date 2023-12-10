@@ -5,6 +5,9 @@ class Mobility:
         self.x = x
         self.y = y
         self.mobility_model_params = mobility_model_params
+        self.target_x = np.random.uniform(0, mobility_model_params['room_x'])
+        self.target_y = np.random.uniform(0, mobility_model_params['room_y'])
+        self.remaining_time = 0
 
     def move(self):
         # Update user position based on the chosen mobility model
@@ -17,6 +20,23 @@ class Mobility:
             self.x += step_size * np.cos(angle)
             self.y += step_size * np.sin(angle)
 
+        elif mobility_model == 'random_waypoint':
+            if self.remaining_time <= 0:
+                # Choose a new random target location
+                self.target_x = np.random.uniform(0, self.mobility_model_params['room_x'])
+                self.target_y = np.random.uniform(0, self.mobility_model_params['room_y'])
+                distance = np.sqrt((self.target_x - self.x)**2 + (self.target_y - self.y)**2)
+                self.remaining_time = distance / self.mobility_model_params['speed']
+
+            # Move towards the target location
+            dx = self.target_x - self.x
+            dy = self.target_y - self.y
+            distance_to_move = min(self.mobility_model_params['speed'], np.sqrt(dx**2 + dy**2))
+            angle = np.arctan2(dy, dx)
+            self.x += distance_to_move * np.cos(angle)
+            self.y += distance_to_move * np.sin(angle)
+            self.remaining_time -= 1
+
         # Add more mobility models as needed
 
         # Ensure the user stays within the room boundaries
@@ -25,22 +45,29 @@ class Mobility:
 
 if __name__ == "__main__":
     # User mobility model parameters
-    mobility_model_params = {
-        'type': 'random_walk',  # Change this to the desired mobility model
-        'step_size': 0.1,  # Adjust step size based on the room dimensions
+    mobility_model_params_random_walk = {
+        'type': 'random_walk',
+        'step_size': 0.1,
         'room_x': 5,
         'room_y': 5,
     }
 
-    # Create a user with initial position
-    user = User(x=2.5, y=2.5, mobility_model_params=mobility_model_params)
+    mobility_model_params_random_waypoint = {
+        'type': 'random_waypoint',
+        'speed': 0.1,
+        'room_x': 5,
+        'room_y': 5,
+    }
+
+    # Create a user with initial position using the desired mobility model
+    user = Mobility(x=2.5, y=2.5, mobility_model_params=mobility_model_params_random_waypoint)
 
     # Simulate user movement for a certain number of steps
     num_steps = 100
 
     for _ in range(num_steps):
         user.move()
-        # Perform any necessary calculations or actions based on user's new position
+        # Perform any necessary calculations or actions based on the user's new position
         # For example, calculate throughput or handover decisions
 
         # Print the user's current position

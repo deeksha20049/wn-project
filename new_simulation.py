@@ -33,7 +33,9 @@ LIFI_APS = [
 
 MOBILITY_CONFIG = {
     'type': 'random_walk',
+    # 'type': 'random_waypoint',
     'step_size': 0.5,
+    # 'speed': 0.1,
     'room_x': ROOM_WIDTH,
     'room_y': ROOM_HEIGHT
 }
@@ -44,9 +46,15 @@ NUMBER_OF_USERS = 10
 conventional_throughputs = []
 proposed_throughputs = []
 
+# Create lists to store user positions for plotting
+user_positions_x = [[] for _ in range(NUMBER_OF_USERS)]
+user_positions_y = [[] for _ in range(NUMBER_OF_USERS)]
+
 for user_index in range(NUMBER_OF_USERS):
 
-    USER = Mobility(0, 0, MOBILITY_CONFIG)
+    # randome start positions
+    # USER = Mobility(0, 0, MOBILITY_CONFIG)
+    USER = Mobility(np.random.uniform(0, ROOM_WIDTH), np.random.uniform(0, ROOM_HEIGHT), MOBILITY_CONFIG)
 
     blockage_prob = check_blockage(mean_occurrence_rate=1/5)
 
@@ -57,6 +65,11 @@ for user_index in range(NUMBER_OF_USERS):
 
     for _ in range(10):
         USER.move()
+
+        # Store user positions for plotting
+        user_positions_x[user_index].append(USER.x)
+        user_positions_y[user_index].append(USER.y)
+
         print(f"User {user_index+1} Position: ({USER.x:.2f}, {USER.y:.2f})")
 
         # Calculate WiFi channel gain
@@ -112,3 +125,15 @@ avg_proposed_throughput = np.mean(proposed_throughputs)
 
 print("Conventional Overall Average Throughput (Mbps): ", avg_conventional_throughput)
 print("Proposed Overall Average Throughput (Mbps): ", avg_proposed_throughput)
+
+# Plot user movements
+plt.figure(figsize=(8, 8))
+for user_index in range(NUMBER_OF_USERS):
+    plt.plot(user_positions_x[user_index], user_positions_y[user_index], label=f'User {user_index+1}')
+
+plt.title('User Movements in the Room')
+plt.xlabel('X-axis')
+plt.ylabel('Y-axis')
+plt.legend()
+plt.grid(True)
+plt.show()
