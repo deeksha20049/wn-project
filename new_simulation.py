@@ -36,7 +36,7 @@ MOBILITY_CONFIG = {
     'room_y': ROOM_HEIGHT
 }
 
-USER = Mobility(4, 4, MOBILITY_CONFIG)
+USER = Mobility(3.5, 4, MOBILITY_CONFIG)
 blockage_prob = check_blockage(mean_occurrence_rate=1/10)
 
 for _ in range(10):

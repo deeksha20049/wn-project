@@ -1,5 +1,6 @@
 import numpy as np
 from typing import List
+import json 
 
 class LifiAccessPoint:
     def __init__(self, x, y, Φ_1by2=60, Apd=100*1e-4, ref_index=1.5, FOV=90, gf=1,
@@ -46,7 +47,13 @@ class LifiAccessPoint:
         # self.XR, self.YR = np.meshgrid(self.x, self.y)
         # print(self.XR)
         # print(self.XR.shape)
-
+        import os
+        print(os.getcwd())
+        name = "wn-project/channel_gain_nlos_mids_"+str(int(self.lifi_position[0]*100)) +"_"+ str(int(self.lifi_position[1]*100))
+        with open(name+'.json') as json_file:
+            self.channel_gain_nlos_data = json.load(json_file)
+        # for i,j in self.channel_gain_nlos.items():
+        #     self.channel_gain_nlos[i] = np.array(j)
     def get_channel_gain(self, user_x, user_y):
         # uncomment this line to include NLOS channel gain
         return self.channel_gain_los(user_x, user_y) #+ self.channel_gain_nlos(user_x, user_y)
@@ -60,6 +67,15 @@ class LifiAccessPoint:
         channel_gain = ((self.m + 1) * self.Apd * (np.cos(irradiance)**self.m) * np.cos(incidence) * self.gf * gc) / (2 * np.pi * (d**2))
         # print(incidence, irradiance, channel_gain, self.m, gc, self.Apd, self.gf)
         return channel_gain
+    
+    
+    def custom_round(self,number):
+        rounded_number = round(number, 1)
+    
+    # Set the second decimal place to 5
+        modified_number = rounded_number + 0.05
+        rounded_number = round(modified_number, 2)
+        return rounded_number if rounded_number <= 5 else rounded_number - 0.1
     
     def channel_gain_nlos(self, user_x, user_y):
         # boxes_per_meter = 10
@@ -86,7 +102,12 @@ class LifiAccessPoint:
         #             integration += (numerator * dl * dh) / (2 * (np.pi * d_iw * d_wu)**2)
         # return integration
         # Read files
-        return 1
+        # floor or ceil the value of user_x and user_y to _._0 or _._5
+        user_x = round(self.custom_round(user_x), 2)
+        user_y = round(self.custom_round(user_y), 2)
+        
+        return self.channel_gain_nlos_data[str(tuple([user_x, user_y]))]
+        
     
     def signal_to_noise_ratio(self, user_x, user_y, otherLifiAPs:List=None):
         summation_term = 0
@@ -125,6 +146,7 @@ class LifiAccessPoint:
 if __name__ == "__main__":
     x, y = 1.25, 1.25
     lifi_ap1 = LifiAccessPoint(x=1.25, y=1.25)
+    print(lifi_ap1.channel_gain_nlos(1.37, 2.13))
     # lifi_ap2 = LifiAccessPoint(x=1.25, y=3.75)
     # lifi_ap3 = LifiAccessPoint(x=3.75, y=3.75)
     # lifi_ap4 = LifiAccessPoint(x=3.75, y=1.25)
