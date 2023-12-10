@@ -49,7 +49,7 @@ class LifiAccessPoint:
         # print(self.XR.shape)
         import os
         print(os.getcwd())
-        name = "wn-project/channel_gain_nlos_mids_"+str(int(self.lifi_position[0]*100)) +"_"+ str(int(self.lifi_position[1]*100))
+        name = "./channel_gain_nlos_mids_"+str(int(self.lifi_position[0]*100)) +"_"+ str(int(self.lifi_position[1]*100))
         with open(name+'.json') as json_file:
             self.channel_gain_nlos_data = json.load(json_file)
         # for i,j in self.channel_gain_nlos.items():

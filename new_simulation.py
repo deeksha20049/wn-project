@@ -5,6 +5,7 @@ from propose import ProposedMethod
 from new_mobility import Mobility
 from user import User
 from blockage import check_blockage, generate_random_variable
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -37,7 +38,14 @@ MOBILITY_CONFIG = {
 }
 
 USER = Mobility(3.5, 4, MOBILITY_CONFIG)
+
 blockage_prob = check_blockage(mean_occurrence_rate=1/10)
+
+wifi_snrs = []
+lifi_snrs_1 = []
+lifi_snrs_2 = []
+lifi_snrs_3 = []
+lifi_snrs_4 = []
 
 for _ in range(10):
     USER.move()
@@ -58,6 +66,11 @@ for _ in range(10):
         else:
             lifi_snr.append(10*np.log10(LIFI_APS[i].signal_to_noise_ratio(USER.x, USER.y)))
     
+    wifi_snrs.append(wifi_snr)
+    lifi_snrs_1.append(lifi_snr[0])
+    lifi_snrs_2.append(lifi_snr[1])
+    lifi_snrs_3.append(lifi_snr[2])
+    lifi_snrs_4.append(lifi_snr[3])
     
     # lifi_snr = [10 * np.log10(lifi_ap.signal_to_noise_ratio(USER.x, USER.y)) for lifi_ap in LIFI_APS]
     # lifi_snr = [(1 - blockage_present[i]) * lifi_snr[i] for i in range(len(LIFI_APS))]
@@ -91,3 +104,25 @@ for _ in range(10):
         # Extract the router number from the key (e.g., 'H_L1' -> 'L1')
         router_number = best_router.split('_')[1]
         print(f"Connecting to LiFi ({router_number})")
+
+# calculate average throughput
+if best_router == 'H_W':
+    proposed_method_wifi = ProposedMethod(chosen_network=0, snr_list=wifi_snrs)
+    avg_throughput = proposed_method_wifi.avg_throughput()
+    print(f'Average throughput: {avg_throughput}')
+elif best_router == 'H_L1':
+    proposed_method_lifi = ProposedMethod(chosen_network=1, snr_list=lifi_snrs_1)
+    avg_throughput = proposed_method_lifi.avg_throughput()
+    print(f'Average throughput: {avg_throughput}')
+elif best_router == 'H_L2':
+    proposed_method_lifi = ProposedMethod(chosen_network=1, snr_list=lifi_snrs_2)
+    avg_throughput = proposed_method_lifi.avg_throughput()
+    print(f'Average throughput: {avg_throughput}')
+elif best_router == 'H_L3':
+    proposed_method_lifi = ProposedMethod(chosen_network=1, snr_list=lifi_snrs_3)
+    avg_throughput = proposed_method_lifi.avg_throughput()
+    print(f'Average throughput: {avg_throughput}')
+elif best_router == 'H_L4':
+    proposed_method_lifi = ProposedMethod(chosen_network=1, snr_list=lifi_snrs_4)
+    avg_throughput = proposed_method_lifi.avg_throughput()
+    print(f'Average throughput: {avg_throughput}')
