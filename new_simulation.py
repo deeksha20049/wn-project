@@ -3,7 +3,6 @@ from lifi import LifiAccessPoint
 from wifi import WiFiAccessPoint
 from propose import ProposedMethod
 from new_mobility import Mobility
-from user import User
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -40,3 +39,22 @@ USER = Mobility(0, 0, MOBILITY_CONFIG)
 for _ in range(10):
     USER.move()
     print(f"User Position: ({USER.x:.2f}, {USER.y:.2f})")
+
+    # Calculate WiFi channel gain
+    wifi_channel_gain = WIFI_AP.calculate_channel_gain(USER, fc=2.4e9)
+
+    # Calculate LiFi channel gains
+    lifi_channel_gains = [lifi_ap.get_channel_gain(USER.x, USER.y) for lifi_ap in LIFI_APS]
+
+    # Use the proposed method to determine average throughput
+    proposed_method_wifi = ProposedMethod(chosen_network=0, shannon_capacity=1e6, proportion_of_time=0.8)
+    proposed_method_lifi = ProposedMethod(chosen_network=1, shannon_capacity=1e6, proportion_of_time=0.8)
+
+    wifi_throughput = proposed_method_wifi.avg_throughput()
+    lifi_throughputs = [proposed_method_lifi.avg_throughput() for _ in LIFI_APS]
+
+    # Decide the best connection based on the highest gain
+    best_connection = max([(wifi_throughput, 'WiFi')] + list(zip(lifi_throughputs, [f'LiFi_{i+1}' for i in range(len(LIFI_APS))])), key=lambda x: x[0])
+
+    print(f"WiFi Throughput: {wifi_throughput} bps, LiFi Throughputs: {lifi_throughputs}")
+    print(f"Best Connection: {best_connection[1]} with Throughput: {best_connection[0]} bps\n")
