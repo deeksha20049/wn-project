@@ -53,6 +53,7 @@ for _ in range(10):
     lifi_snr = []
     for i in range(len(LIFI_APS)):
         if blockage_present[i] == 1:
+            print(f"Blockage present from LiFi AP {i+1}")
             lifi_snr.append(10*np.log10(LIFI_APS[i].signal_to_noise_ratio_nlos(USER.x, USER.y)))
         else:
             lifi_snr.append(10*np.log10(LIFI_APS[i].signal_to_noise_ratio(USER.x, USER.y)))
