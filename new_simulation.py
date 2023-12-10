@@ -38,58 +38,77 @@ MOBILITY_CONFIG = {
     'room_y': ROOM_HEIGHT
 }
 
-USER = Mobility(3.5, 4, MOBILITY_CONFIG)
+NUMBER_OF_USERS = 10
 
-blockage_prob = check_blockage(mean_occurrence_rate=1/10)
+# Lists to store throughput for each user
+conventional_throughputs = []
+proposed_throughputs = []
 
-wifi_snrs = []
-wifi_proportion_time = 0
-lifi_snrs = []
-lifi_propotion_time = 0
+for user_index in range(NUMBER_OF_USERS):
 
-for _ in range(10):
-    USER.move()
-    print(f"User Position: ({USER.x:.2f}, {USER.y:.2f})")
+    USER = Mobility(0, 0, MOBILITY_CONFIG)
 
-    # Calculate WiFi channel gain
-    user = User('U', (USER.x, USER.y, USER_HEIGHT))
-    wifi_channel_gain = WIFI_AP.calculate_channel_gain(user, fc=2.4e9)
-    wifi_snr = WIFI_AP.calculate_snr(wifi_channel_gain)
+    blockage_prob = check_blockage(mean_occurrence_rate=1/10)
 
-    # Calculate LiFi channel gains
-    blockage_present = [generate_random_variable(blockage_prob) for _ in LIFI_APS] 
-    lifi_snr = []
-    for i in range(len(LIFI_APS)):
-        if blockage_present[i] == 1:
-            print(f"Blockage present from LiFi AP {i+1}")
-            lifi_snr.append(10*np.log10(LIFI_APS[i].signal_to_noise_ratio_nlos(USER.x, USER.y)))
+    wifi_snrs = []
+    wifi_proportion_time = 0
+    lifi_snrs = []
+    lifi_propotion_time = 0
+
+    for _ in range(10):
+        USER.move()
+        print(f"User {user_index+1} Position: ({USER.x:.2f}, {USER.y:.2f})")
+
+        # Calculate WiFi channel gain
+        user = User('U', (USER.x, USER.y, USER_HEIGHT))
+        wifi_channel_gain = WIFI_AP.calculate_channel_gain(user, fc=2.4e9)
+        wifi_snr = WIFI_AP.calculate_snr(wifi_channel_gain)
+
+        # Calculate LiFi channel gains
+        blockage_present = [generate_random_variable(blockage_prob) for _ in LIFI_APS] 
+        lifi_snr = []
+        for i in range(len(LIFI_APS)):
+            if blockage_present[i] == 1:
+                print(f"Blockage present from LiFi AP {i+1}")
+                lifi_snr.append(10*np.log10(LIFI_APS[i].signal_to_noise_ratio_nlos(USER.x, USER.y)))
+            else:
+                lifi_snr.append(10*np.log10(LIFI_APS[i].signal_to_noise_ratio(USER.x, USER.y)))
+
+        
+        print(f"WiFi SNR: {wifi_snr} dB, LiFi SNRs: {lifi_snr}")
+        
+        if wifi_snr > max(lifi_snr):
+            best_router = 'H_W'
+            wifi_snrs.append(wifi_snr)
+            wifi_proportion_time += 1
         else:
-            lifi_snr.append(10*np.log10(LIFI_APS[i].signal_to_noise_ratio(USER.x, USER.y)))
+            best_router = max([(lifi_snr[i], f'H_L{i+1}') for i in range(len(lifi_snr))], key=lambda x: x[0])[1]
+            lifi_snrs.append(max(lifi_snr))
+            lifi_propotion_time += 1
 
-    
-    print(f"WiFi SNR: {wifi_snr} dB, LiFi SNRs: {lifi_snr}")
-    
-    if wifi_snr > max(lifi_snr):
-        best_router = 'H_W'
-        wifi_snrs.append(wifi_snr)
-        wifi_proportion_time += 1
-    else:
-        best_router = max([(lifi_snr[i], f'H_L{i+1}') for i in range(len(lifi_snr))], key=lambda x: x[0])[1]
-        lifi_snrs.append(max(lifi_snr))
-        lifi_propotion_time += 1
+        # Connect the user to the best router based on the decision
+        if best_router == 'H_W':
+            print("Connecting to WiFi (W)")
+        else:
+            # Extract the router number from the key (e.g., 'H_L1' -> 'L1')
+            router_number = best_router.split('_')[1]
+            print(f"Connecting to LiFi ({router_number})")
 
-    # Connect the user to the best router based on the decision
-    if best_router == 'H_W':
-        print("Connecting to WiFi (W)")
-    else:
-        # Extract the router number from the key (e.g., 'H_L1' -> 'L1')
-        router_number = best_router.split('_')[1]
-        print(f"Connecting to LiFi ({router_number})")
+    # calculate average throughput
+    wifi_avg_throughput_proposed = ProposedMethod(0, wifi_snrs, wifi_proportion_time).avg_throughput()
+    lifi_avg_throughput_proposed = ProposedMethod(1, lifi_snrs, lifi_propotion_time).avg_throughput()
+    wifi_avg_throughput_conventional = ConventionalMethod(0, wifi_snrs, wifi_proportion_time).avg_throughput()
+    lifi_avg_throughput_conventional = ConventionalMethod(1, lifi_snrs, lifi_propotion_time).avg_throughput()
+    print("Conventional Average Throughput (Mbps): ", (wifi_avg_throughput_conventional + lifi_avg_throughput_conventional)/3000)
+    print("Proposed Average Throughput (Mbps): ", (wifi_avg_throughput_proposed + lifi_avg_throughput_proposed)/4000)
 
-# calculate average throughput
-wifi_avg_throughput_proposed = ProposedMethod(0, wifi_snrs, wifi_proportion_time).avg_throughput()
-lifi_avg_throughput_proposed = ProposedMethod(1, lifi_snrs, lifi_propotion_time).avg_throughput()
-wifi_avg_throughput_conventional = ConventionalMethod(0, wifi_snrs, wifi_proportion_time).avg_throughput()
-lifi_avg_throughput_conventional = ConventionalMethod(1, lifi_snrs, lifi_propotion_time).avg_throughput()
-print("Conventional Average Throughput (Mbps): ", wifi_avg_throughput_conventional + lifi_avg_throughput_conventional)
-print("Proposed Average Throughput (Mbps): ", wifi_avg_throughput_proposed + lifi_avg_throughput_proposed) 
+    # Append the throughput for this user to the list
+    conventional_throughputs.append((wifi_avg_throughput_conventional + lifi_avg_throughput_conventional)/3000)
+    proposed_throughputs.append((wifi_avg_throughput_proposed + lifi_avg_throughput_proposed)/4000)
+
+# Calculate overall average throughput across all users
+avg_conventional_throughput = np.mean(conventional_throughputs)
+avg_proposed_throughput = np.mean(proposed_throughputs)
+
+print("Conventional Overall Average Throughput (Mbps): ", avg_conventional_throughput)
+print("Proposed Overall Average Throughput (Mbps): ", avg_proposed_throughput)

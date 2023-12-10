@@ -3,7 +3,7 @@ import math
 class ConventionalMethod:
     chi_factor = 1
 
-    bw = 20 # MHz
+    bw = 20*100 # MHz
 
     # choosen_network:
     # 0: wifi

@@ -5,7 +5,8 @@ class ProposedMethod:
     # T_a_u = cell dwell time
     eta = 1.5 # refractive index
     hho = 200 # ms
-    bw = 20 # MHz
+    bw = 20*10 # MHz
+
 
     cell_dwell_times = [
         0.4478,
@@ -52,7 +53,7 @@ class ProposedMethod:
 
             ans = 0
             for i in range(len(self.snr_list)):
-                ans += self.chi_factor*self.vho*self.shannon_capacity_list[i]*min(self.proportion_of_time, 1 - (self.hho/self.cell_dwell_times[i]))
+                ans += self.chi_factor*self.vho*self.shannon_capacity_list[i]*min(self.proportion_of_time, 1 - (self.hho/self.avg_cell_dwell_time))
 
         elif (self.chosen_network == 0):
             # ans = self.chi_factor*self.vho*self.shannon_capacity*self.proportion_of_time
