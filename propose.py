@@ -21,10 +21,10 @@ class ProposedMethod:
             self.vho = 0
 
     def avg_throughput(self):
-        if (self.choosen_network == 1):
-            ans = self.chi_factor*self.vho*self.shannon_capacity*math.min(self.proportion_of_time, 1 - (self.hho/self.avg_cell_dwell_time))
+        if (self.chosen_network == 1):
+            ans = self.chi_factor*self.vho*self.shannon_capacity*min(self.proportion_of_time, 1 - (self.hho/self.avg_cell_dwell_time))
 
-        elif (self.choosen_network == 0):
+        elif (self.chosen_network == 0):
             ans = self.chi_factor*self.vho*self.shannon_capacity*self.proportion_of_time
 
         return ans

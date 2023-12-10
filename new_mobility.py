@@ -1,6 +1,6 @@
 import numpy as np
 
-class User:
+class Mobility:
     def __init__(self, x, y, mobility_model_params):
         self.x = x
         self.y = y

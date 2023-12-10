@@ -3,6 +3,7 @@ from lifi import LifiAccessPoint
 from wifi import WiFiAccessPoint
 from propose import ProposedMethod
 from new_mobility import Mobility
+from user import User
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -41,7 +42,8 @@ for _ in range(10):
     print(f"User Position: ({USER.x:.2f}, {USER.y:.2f})")
 
     # Calculate WiFi channel gain
-    wifi_channel_gain = WIFI_AP.calculate_channel_gain(USER, fc=2.4e9)
+    user = User('U', (USER.x, USER.y, USER_HEIGHT))
+    wifi_channel_gain = WIFI_AP.calculate_channel_gain(user, fc=2.4e9)
 
     # Calculate LiFi channel gains
     lifi_channel_gains = [lifi_ap.get_channel_gain(USER.x, USER.y) for lifi_ap in LIFI_APS]
