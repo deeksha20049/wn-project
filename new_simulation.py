@@ -53,9 +53,9 @@ for _ in range(10):
     lifi_snr = []
     for i in range(len(LIFI_APS)):
         if blockage_present[i] == 1:
-            lifi_snr.append(LIFI_APS[i].signal_to_noise_ratio_nlos(USER.x, USER.y))
+            lifi_snr.append(10*np.log10(LIFI_APS[i].signal_to_noise_ratio_nlos(USER.x, USER.y)))
         else:
-            lifi_snr.append(LIFI_APS[i].signal_to_noise_ratio(USER.x, USER.y))
+            lifi_snr.append(10*np.log10(LIFI_APS[i].signal_to_noise_ratio(USER.x, USER.y)))
     
     
     # lifi_snr = [10 * np.log10(lifi_ap.signal_to_noise_ratio(USER.x, USER.y)) for lifi_ap in LIFI_APS]
@@ -76,3 +76,17 @@ for _ in range(10):
     # print(f"Best Connection: {best_connection[1]} with Throughput: {best_connection[0]} bps\n")
     
     print(f"WiFi SNR: {wifi_snr} dB, LiFi SNRs: {lifi_snr}")
+    
+
+    if wifi_snr > max(lifi_snr):
+        best_router = 'H_W'
+    else:
+        best_router = max([(lifi_snr[i], f'H_L{i+1}') for i in range(len(lifi_snr))], key=lambda x: x[0])[1]
+
+    # Connect the user to the best router based on the decision
+    if best_router == 'H_W':
+        print("Connecting to WiFi (W)")
+    else:
+        # Extract the router number from the key (e.g., 'H_L1' -> 'L1')
+        router_number = best_router.split('_')[1]
+        print(f"Connecting to LiFi ({router_number})")
