@@ -2,6 +2,7 @@
 from lifi import LifiAccessPoint
 from wifi import WiFiAccessPoint
 from propose import ProposedMethod
+from conventional import ConventionalMethod
 from new_mobility import Mobility
 from user import User
 from blockage import check_blockage, generate_random_variable
@@ -108,21 +109,36 @@ for _ in range(10):
 # calculate average throughput
 if best_router == 'H_W':
     proposed_method_wifi = ProposedMethod(chosen_network=0, snr_list=wifi_snrs)
-    avg_throughput = proposed_method_wifi.avg_throughput()
-    print(f'Average throughput: {avg_throughput}')
+    conventional_method_wifi = ConventionalMethod(chosen_network=0, snr_list=wifi_snrs)
+    avg_throughput_proposed = proposed_method_wifi.avg_throughput()
+    avg_throughput_conventional = conventional_method_wifi.avg_throughput()
+    print(f'Average throughput (proposed): {avg_throughput_proposed}')
+    print(f'Average throughput (conventional): {avg_throughput_conventional}')
 elif best_router == 'H_L1':
     proposed_method_lifi = ProposedMethod(chosen_network=1, snr_list=lifi_snrs_1)
-    avg_throughput = proposed_method_lifi.avg_throughput()
-    print(f'Average throughput: {avg_throughput}')
+    conventional_method_lifi = ConventionalMethod(chosen_network=1, snr_list=lifi_snrs_1)
+    avg_throughput_proposed = proposed_method_lifi.avg_throughput()
+    avg_throughput_conventional = conventional_method_lifi.avg_throughput()
+    print(f'Average throughput (proposed): {avg_throughput_proposed}')
+    print(f'Average throughput (conventional): {avg_throughput_conventional}')
 elif best_router == 'H_L2':
     proposed_method_lifi = ProposedMethod(chosen_network=1, snr_list=lifi_snrs_2)
-    avg_throughput = proposed_method_lifi.avg_throughput()
-    print(f'Average throughput: {avg_throughput}')
+    conventional_method_lifi = ConventionalMethod(chosen_network=1, snr_list=lifi_snrs_2)
+    avg_throughput_proposed = proposed_method_lifi.avg_throughput()
+    avg_throughput_conventional = conventional_method_lifi.avg_throughput()
+    print(f'Average throughput (proposed): {avg_throughput_proposed}')
+    print(f'Average throughput (conventional): {avg_throughput_conventional}')
 elif best_router == 'H_L3':
     proposed_method_lifi = ProposedMethod(chosen_network=1, snr_list=lifi_snrs_3)
-    avg_throughput = proposed_method_lifi.avg_throughput()
-    print(f'Average throughput: {avg_throughput}')
+    conventional_method_lifi = ConventionalMethod(chosen_network=1, snr_list=lifi_snrs_3)
+    avg_throughput_proposed = proposed_method_lifi.avg_throughput()
+    avg_throughput_conventional = conventional_method_lifi.avg_throughput()
+    print(f'Average throughput (proposed): {avg_throughput_proposed}')
+    print(f'Average throughput (conventional): {avg_throughput_conventional}')
 elif best_router == 'H_L4':
     proposed_method_lifi = ProposedMethod(chosen_network=1, snr_list=lifi_snrs_4)
-    avg_throughput = proposed_method_lifi.avg_throughput()
-    print(f'Average throughput: {avg_throughput}')
+    conventional_method_lifi = ConventionalMethod(chosen_network=1, snr_list=lifi_snrs_4)
+    avg_throughput_proposed = proposed_method_lifi.avg_throughput()
+    avg_throughput_conventional = conventional_method_lifi.avg_throughput()
+    print(f'Average throughput (proposed): {avg_throughput_proposed}')
+    print(f'Average throughput (conventional): {avg_throughput_conventional}')
