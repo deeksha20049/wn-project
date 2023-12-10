@@ -24,13 +24,11 @@ class ProposedMethod:
 
     avg_cell_dwell_time = sum(cell_dwell_times)/len(cell_dwell_times)
 
-    proportion_of_time = 1.0
-
     # choosen_network:
     # 0: wifi
     # 1: lifi
 
-    def __init__(self, chosen_network, snr_list):
+    def __init__(self, chosen_network, snr_list, proportion_of_time):
         self.name = 'proposed-method'
         self.chosen_network = chosen_network
         self.snr_list = snr_list
@@ -39,6 +37,7 @@ class ProposedMethod:
         elif (self.chosen_network == 0):
             self.vho = 1
         self.shannon_capacity_list = self.shannon_capacity(self.snr_list)
+        self.proportion_of_time = proportion_of_time
     
     def shannon_capacity(self, snr_list):
         shannon_capacity_list = []

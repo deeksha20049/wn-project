@@ -43,10 +43,9 @@ USER = Mobility(3.5, 4, MOBILITY_CONFIG)
 blockage_prob = check_blockage(mean_occurrence_rate=1/10)
 
 wifi_snrs = []
-lifi_snrs_1 = []
-lifi_snrs_2 = []
-lifi_snrs_3 = []
-lifi_snrs_4 = []
+wifi_proportion_time = 0
+lifi_snrs = []
+lifi_propotion_time = 0
 
 for _ in range(10):
     USER.move()
@@ -66,37 +65,18 @@ for _ in range(10):
             lifi_snr.append(10*np.log10(LIFI_APS[i].signal_to_noise_ratio_nlos(USER.x, USER.y)))
         else:
             lifi_snr.append(10*np.log10(LIFI_APS[i].signal_to_noise_ratio(USER.x, USER.y)))
-    
-    wifi_snrs.append(wifi_snr)
-    lifi_snrs_1.append(lifi_snr[0])
-    lifi_snrs_2.append(lifi_snr[1])
-    lifi_snrs_3.append(lifi_snr[2])
-    lifi_snrs_4.append(lifi_snr[3])
-    
-    # lifi_snr = [10 * np.log10(lifi_ap.signal_to_noise_ratio(USER.x, USER.y)) for lifi_ap in LIFI_APS]
-    # lifi_snr = [(1 - blockage_present[i]) * lifi_snr[i] for i in range(len(LIFI_APS))]
-    
-    
-    # # Use the proposed method to determine average throughput
-    # proposed_method_wifi = ProposedMethod(chosen_network=0, shannon_capacity=1e6, proportion_of_time=0.8)
-    # proposed_method_lifi = ProposedMethod(chosen_network=1, shannon_capacity=1e6, proportion_of_time=0.8)
 
-    # wifi_throughput = proposed_method_wifi.avg_throughput()
-    # lifi_throughputs = [proposed_method_lifi.avg_throughput() for _ in LIFI_APS]
-
-    # # Decide the best connection based on the highest gain
-    # best_connection = max([(wifi_throughput, 'WiFi')] + list(zip(lifi_throughputs, [f'LiFi_{i+1}' for i in range(len(LIFI_APS))])), key=lambda x: x[0])
-
-    # print(f"WiFi Throughput: {wifi_throughput} bps, LiFi Throughputs: {lifi_throughputs}")
-    # print(f"Best Connection: {best_connection[1]} with Throughput: {best_connection[0]} bps\n")
     
     print(f"WiFi SNR: {wifi_snr} dB, LiFi SNRs: {lifi_snr}")
     
-
     if wifi_snr > max(lifi_snr):
         best_router = 'H_W'
+        wifi_snrs.append(wifi_snr)
+        wifi_proportion_time += 1
     else:
         best_router = max([(lifi_snr[i], f'H_L{i+1}') for i in range(len(lifi_snr))], key=lambda x: x[0])[1]
+        lifi_snrs.append(max(lifi_snr))
+        lifi_propotion_time += 1
 
     # Connect the user to the best router based on the decision
     if best_router == 'H_W':
@@ -107,38 +87,9 @@ for _ in range(10):
         print(f"Connecting to LiFi ({router_number})")
 
 # calculate average throughput
-if best_router == 'H_W':
-    proposed_method_wifi = ProposedMethod(chosen_network=0, snr_list=wifi_snrs)
-    conventional_method_wifi = ConventionalMethod(chosen_network=0, snr_list=wifi_snrs)
-    avg_throughput_proposed = proposed_method_wifi.avg_throughput()
-    avg_throughput_conventional = conventional_method_wifi.avg_throughput()
-    print(f'Average throughput (proposed): {avg_throughput_proposed}')
-    print(f'Average throughput (conventional): {avg_throughput_conventional}')
-elif best_router == 'H_L1':
-    proposed_method_lifi = ProposedMethod(chosen_network=1, snr_list=lifi_snrs_1)
-    conventional_method_lifi = ConventionalMethod(chosen_network=1, snr_list=lifi_snrs_1)
-    avg_throughput_proposed = proposed_method_lifi.avg_throughput()
-    avg_throughput_conventional = conventional_method_lifi.avg_throughput()
-    print(f'Average throughput (proposed): {avg_throughput_proposed}')
-    print(f'Average throughput (conventional): {avg_throughput_conventional}')
-elif best_router == 'H_L2':
-    proposed_method_lifi = ProposedMethod(chosen_network=1, snr_list=lifi_snrs_2)
-    conventional_method_lifi = ConventionalMethod(chosen_network=1, snr_list=lifi_snrs_2)
-    avg_throughput_proposed = proposed_method_lifi.avg_throughput()
-    avg_throughput_conventional = conventional_method_lifi.avg_throughput()
-    print(f'Average throughput (proposed): {avg_throughput_proposed}')
-    print(f'Average throughput (conventional): {avg_throughput_conventional}')
-elif best_router == 'H_L3':
-    proposed_method_lifi = ProposedMethod(chosen_network=1, snr_list=lifi_snrs_3)
-    conventional_method_lifi = ConventionalMethod(chosen_network=1, snr_list=lifi_snrs_3)
-    avg_throughput_proposed = proposed_method_lifi.avg_throughput()
-    avg_throughput_conventional = conventional_method_lifi.avg_throughput()
-    print(f'Average throughput (proposed): {avg_throughput_proposed}')
-    print(f'Average throughput (conventional): {avg_throughput_conventional}')
-elif best_router == 'H_L4':
-    proposed_method_lifi = ProposedMethod(chosen_network=1, snr_list=lifi_snrs_4)
-    conventional_method_lifi = ConventionalMethod(chosen_network=1, snr_list=lifi_snrs_4)
-    avg_throughput_proposed = proposed_method_lifi.avg_throughput()
-    avg_throughput_conventional = conventional_method_lifi.avg_throughput()
-    print(f'Average throughput (proposed): {avg_throughput_proposed}')
-    print(f'Average throughput (conventional): {avg_throughput_conventional}')
+wifi_avg_throughput_proposed = ProposedMethod(0, wifi_snrs, wifi_proportion_time).avg_throughput()
+lifi_avg_throughput_proposed = ProposedMethod(1, lifi_snrs, lifi_propotion_time).avg_throughput()
+wifi_avg_throughput_conventional = ConventionalMethod(0, wifi_snrs, wifi_proportion_time).avg_throughput()
+lifi_avg_throughput_conventional = ConventionalMethod(1, lifi_snrs, lifi_propotion_time).avg_throughput()
+print("Conventional Average Throughput (Mbps): ", wifi_avg_throughput_conventional + lifi_avg_throughput_conventional)
+print("Proposed Average Throughput (Mbps): ", wifi_avg_throughput_proposed + lifi_avg_throughput_proposed) 
