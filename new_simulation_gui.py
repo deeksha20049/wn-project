@@ -45,23 +45,20 @@ proposed_throughputs = []
 user_positions_x = [[] for _ in range(NUMBER_OF_USERS)]
 user_positions_y = [[] for _ in range(NUMBER_OF_USERS)]
 
-# Create a list to store the best router chosen for each user
-best_routers = []
-wifi_snrs = []
-lifi_snrs = []
-wifi_proportion_time = 0
-lifi_propotion_time = 0
-
 # Create Tkinter window
 root = Tk()
 root.title("Wireless Communication Simulation")
-root.geometry("900x900")
+root.geometry("500x500")
+
+graph = Tk()
+graph.title("Graph")
+graph.geometry("900x900")
 
 # Create Matplotlib figure
 fig, ax = plt.subplots(figsize=(4, 4))
 
 # Create canvas for Matplotlib figure
-canvas = FigureCanvasTkAgg(fig, master=root)
+canvas = FigureCanvasTkAgg(fig, master=graph)
 canvas_widget = canvas.get_tk_widget()
 canvas_widget.grid(row=0, column=0, padx=10, pady=10)
 
@@ -79,10 +76,16 @@ label_lifi_snr = Label(root, text="LiFi SINR")
 label_lifi_snr.grid(row=0, column=4, padx=10, pady=5)
 
 button_next = Button(root, text="Next", command=lambda: update_simulation())
-button_next.grid(row=1, column=1, padx=10, pady=5)
+button_next.grid(row=0, column=5, padx=10, pady=5)
+
+button_stop = Button(root, text="Stop", command=lambda: handleDestroy())
+button_stop.grid(row=0, column=0, padx=10, pady=5)
 
 # Lists to store labels for each user
 user_labels = []
+router_labels = []
+wifi_snr_labels = []
+lifi_snr_labels = []
 
 # Initialize the users and the simulation
 users = [Mobility(np.random.uniform(0, ROOM_WIDTH), np.random.uniform(0, ROOM_HEIGHT), MOBILITY_CONFIG) for _ in range(NUMBER_OF_USERS)]
@@ -90,11 +93,32 @@ users = [Mobility(np.random.uniform(0, ROOM_WIDTH), np.random.uniform(0, ROOM_HE
 # Create labels for each user
 for i in range(NUMBER_OF_USERS):
     user_label = Label(root, text=f"User {i + 1}")
-    user_label.grid(row=i + 2, column=0, padx=10, pady=5)
+    user_label.grid(row=i+1, column=1, padx=10, pady=5)
     user_labels.append(user_label)
-    
+
+    router_label = Label(root, text="")
+    router_label.grid(row=i+1, column=2, padx=10, pady=5)
+    router_labels.append(router_label)
+
+    wifi_snr_label = Label(root, text="")
+    wifi_snr_label.grid(row=i+1, column=3, padx=10, pady=5)
+    wifi_snr_labels.append(wifi_snr_label)
+
+    lifi_snr_label = Label(root, text="")
+    lifi_snr_label.grid(row=i+1, column=4, padx=10, pady=5)
+    lifi_snr_labels.append(lifi_snr_label)
+
+def handleDestroy():
+    root.destroy()
+    graph.destroy()
+
+
+# Function to calculate the SNRs and connect the user to the best router
 def calculate_snrs(user):
-    global wifi_snrs, lifi_snrs, wifi_proportion_time, lifi_propotion_time
+    wifi_snrs = []
+    lifi_snrs = []
+    wifi_proportion_time = 0
+    lifi_propotion_time = 0
     best_router = ""
 
     blockage_prob = check_blockage(mean_occurrence_rate=1/10)
@@ -133,7 +157,7 @@ def calculate_snrs(user):
         router_number = best_router.split('_')[1]
         print(f"Connecting to LiFi ({router_number})")
 
-    return wifi_snr, max(lifi_snr), best_router
+    return wifi_snr, max(lifi_snr), best_router, wifi_snrs, lifi_snrs, wifi_proportion_time, lifi_propotion_time
 
 def update_simulation():
     for user_index in range(NUMBER_OF_USERS):
@@ -148,13 +172,25 @@ def update_simulation():
         print(f"User {user_index + 1} Position: ({users[user_index].x:.2f}, {users[user_index].y:.2f})")
 
         # Calculate SNRs
-        wifi_snr, lifi_snr, best_router = calculate_snrs(user)
+        wifi_snr, lifi_snr, best_router, wifi_snrs, lifi_snrs, wifi_proportion_time, lifi_propotion_time = calculate_snrs(user)
 
         # Update the labels
-        label_user.configure(text=f"User {user_index + 1}")
-        label_router.configure(text=best_router)
-        label_wifi_snr.configure(text=f"{wifi_snr:.2f} dB")
-        label_lifi_snr.configure(text=f"{lifi_snr:.2f} dB")
+        user_labels[user_index].config(text=f"User {user_index + 1}")
+        router_labels[user_index].config(text=best_router)
+        wifi_snr_labels[user_index].config(text=f"{wifi_snr:.2f} dB")
+        lifi_snr_labels[user_index].config(text=f"{lifi_snr:.2f} dB")
+
+        # Calculate average throughput
+        wifi_avg_throughput_proposed = ProposedMethod(0, wifi_snrs, wifi_proportion_time).avg_throughput()
+        lifi_avg_throughput_proposed = ProposedMethod(1, lifi_snrs, lifi_propotion_time).avg_throughput()
+        wifi_avg_throughput_conventional = ConventionalMethod(0, wifi_snrs, wifi_proportion_time).avg_throughput()
+        lifi_avg_throughput_conventional = ConventionalMethod(1, lifi_snrs, lifi_propotion_time).avg_throughput()
+        print("Conventional Average Throughput (Mbps): ", (wifi_avg_throughput_conventional + lifi_avg_throughput_conventional)/3000)
+        print("Proposed Average Throughput (Mbps): ", (wifi_avg_throughput_proposed + lifi_avg_throughput_proposed)/4000)
+
+        # Append the throughput for this user to the list
+        conventional_throughputs.append((wifi_avg_throughput_conventional + lifi_avg_throughput_conventional) / 3000)
+        proposed_throughputs.append((wifi_avg_throughput_proposed + lifi_avg_throughput_proposed) / 4000)
 
     # Plot user movements
     ax.clear()
@@ -168,20 +204,29 @@ def update_simulation():
 
     canvas.draw()
 
-    # # Update the best router list
-    # best_routers.append(best_router)
-
 # Start the Tkinter main loop
 root.mainloop()
 
-# Calculate average throughput
-wifi_avg_throughput_proposed = ProposedMethod(0, wifi_snrs, wifi_proportion_time).avg_throughput()
-lifi_avg_throughput_proposed = ProposedMethod(1, lifi_snrs, lifi_propotion_time).avg_throughput()
-wifi_avg_throughput_conventional = ConventionalMethod(0, wifi_snrs, wifi_proportion_time).avg_throughput()
-lifi_avg_throughput_conventional = ConventionalMethod(1, lifi_snrs, lifi_propotion_time).avg_throughput()
+# Calculate overall average throughput across all users
+avg_conventional_throughput = np.mean(conventional_throughputs)
+avg_proposed_throughput = np.mean(proposed_throughputs)
 
-# Append the throughput for this user to the list
-conventional_throughputs.append((wifi_avg_throughput_conventional + lifi_avg_throughput_conventional) / 3000)
-proposed_throughputs.append((wifi_avg_throughput_proposed + lifi_avg_throughput_proposed) / 4000)
+print("="*20)
+print("")
+print("")
+print("")
+print("")
+print("Conventional Overall Average Throughput (Mbps): ", avg_conventional_throughput)
+print("Proposed Overall Average Throughput (Mbps): ", avg_proposed_throughput)
+
 
 # Plot throughput
+# plt.figure(figsize=(8, 8))
+# plt.plot(conventional_throughputs, label='Conventional')
+# plt.plot(proposed_throughputs, label='Proposed')
+# plt.title('Average Throughput')
+# plt.xlabel('Iteration')
+# plt.ylabel('Throughput (Mbps)')
+# plt.legend()
+# plt.grid(True)
+# plt.show()
