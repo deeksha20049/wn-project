@@ -48,7 +48,7 @@ for user_index in range(NUMBER_OF_USERS):
 
     USER = Mobility(0, 0, MOBILITY_CONFIG)
 
-    blockage_prob = check_blockage(mean_occurrence_rate=1/10)
+    blockage_prob = check_blockage(mean_occurrence_rate=1/5)
 
     wifi_snrs = []
     wifi_proportion_time = 0
