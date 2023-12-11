@@ -17,7 +17,7 @@ pip3 install -r requirements.txt
 ```
 - Run the following command
 ```bash
-python3 simulation.py
+python3 new_simulation_gui.py
 ```
 
 
