@@ -54,9 +54,10 @@ class LifiAccessPoint:
             self.channel_gain_nlos_data = json.load(json_file)
         # for i,j in self.channel_gain_nlos.items():
         #     self.channel_gain_nlos[i] = np.array(j)
+        
     def get_channel_gain(self, user_x, user_y):
         # uncomment this line to include NLOS channel gain
-        return self.channel_gain_los(user_x, user_y) #+ self.channel_gain_nlos(user_x, user_y)
+        return self.channel_gain_los(user_x, user_y) + self.channel_gain_nlos(user_x, user_y)
 
     def channel_gain_los(self, user_x, user_y):
         d = self.distance(user_x, user_y)        
@@ -147,19 +148,19 @@ if __name__ == "__main__":
     x, y = 1.25, 1.25
     lifi_ap1 = LifiAccessPoint(x=1.25, y=1.25)
     print(lifi_ap1.channel_gain_nlos(1.37, 2.13))
-    # lifi_ap2 = LifiAccessPoint(x=1.25, y=3.75)
-    # lifi_ap3 = LifiAccessPoint(x=3.75, y=3.75)
-    # lifi_ap4 = LifiAccessPoint(x=3.75, y=1.25)
+    lifi_ap2 = LifiAccessPoint(x=1.25, y=3.75)
+    lifi_ap3 = LifiAccessPoint(x=3.75, y=3.75)
+    lifi_ap4 = LifiAccessPoint(x=3.75, y=1.25)
 
-    # ang_incidence = lifi_ap1.angle_incidence(x, y)
-    # optical_gain = lifi_ap1.optical_gain(ang_incidence)
-    # # print(ang_incidence)
-    # # print(optical_gain)
-    # # H = lifi_ap1.get_channel_gain(x, y)
+    ang_incidence = lifi_ap1.angle_incidence(x, y)
+    optical_gain = lifi_ap1.optical_gain(ang_incidence)
+    # print(ang_incidence)
+    # print(optical_gain)
+    # H = lifi_ap1.get_channel_gain(x, y)
     
-    # print('Location: ', 0, 0)
-    # snr = lifi_ap1.signal_to_noise_ratio(0, 0, otherLifiAPs=[lifi_ap2, lifi_ap3, lifi_ap4])
-    # print(snr)
-    # print('Location: ', 1.25, 1.25)
-    # snr = lifi_ap1.signal_to_noise_ratio(1.2, 1.2, otherLifiAPs=[lifi_ap2, lifi_ap3, lifi_ap4])
-    # print(snr)
+    print('Location: ', 0, 0)
+    snr = lifi_ap1.signal_to_noise_ratio(0, 0, otherLifiAPs=[lifi_ap2, lifi_ap3, lifi_ap4])
+    print(snr)
+    print('Location: ', 1.25, 1.25)
+    snr = lifi_ap1.signal_to_noise_ratio(1.2, 1.2, otherLifiAPs=[lifi_ap2, lifi_ap3, lifi_ap4])
+    print(snr)
